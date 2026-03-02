@@ -656,6 +656,40 @@
     --credit-muted:  #c62828;
   }
 
+  body.theme-ygo {
+    --accent:        #6d28d9;
+    --accent-light:  #c4b5fd;
+    --accent-dim:    #6d28d922;
+    --header-bg:     #1e0a3c;
+    --panel-grad-a:  #f5f0ff;
+    --panel-grad-b:  #ede9ff;
+    --panel-hover-a: #e8ddff;
+    --panel-hover-b: #ddd0ff;
+    --panel-col-bg:  #f0eaff;
+    --panel-col-hov: #e4d8ff;
+    --panel-title:   #3b0764;
+    --progress-fill: #6d28d9;
+    --credit-color:  #c4b5fd;
+    --credit-muted:  #7c3aed;
+  }
+
+  body.theme-op {
+    --accent:        #dc2626;
+    --accent-light:  #fbbf24;
+    --accent-dim:    #dc262622;
+    --header-bg:     #1c0a00;
+    --panel-grad-a:  #fff7ed;
+    --panel-grad-b:  #fef3c7;
+    --panel-hover-a: #fed7aa;
+    --panel-hover-b: #fde68a;
+    --panel-col-bg:  #fff3e0;
+    --panel-col-hov: #ffe0b2;
+    --panel-title:   #7c2d12;
+    --progress-fill: #dc2626;
+    --credit-color:  #fbbf24;
+    --credit-muted:  #b91c1c;
+  }
+
   /* ── Game Switcher ── */
   .game-switcher {
     display: flex;
@@ -749,20 +783,36 @@
           </button>
           <button class="tcg-btn" id="tcg-btn-pkm" onclick="selectGame('pkm')" title="Pokémon">
             <svg width="20" height="20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Pokéball outer circle -->
               <circle cx="50" cy="50" r="47" fill="white" stroke="white" stroke-width="2"/>
-              <!-- Top half — white (already white) -->
-              <!-- Bottom half — white -->
-              <!-- Red top half -->
               <path d="M3 50 A47 47 0 0 1 97 50 Z" fill="#e53935"/>
-              <!-- Black dividing band -->
               <rect x="3" y="44" width="94" height="12" fill="#222"/>
-              <!-- Center button outer -->
               <circle cx="50" cy="50" r="14" fill="#222"/>
-              <!-- Center button inner -->
               <circle cx="50" cy="50" r="8" fill="white"/>
             </svg>
             <span>PKM</span>
+          </button>
+          <button class="tcg-btn" id="tcg-btn-ygo" onclick="selectGame('ygo')" title="Yu-Gi-Oh!">
+            <svg width="17" height="17" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- YGO pyramid / eye of anubis -->
+              <polygon points="50,4 96,96 4,96" fill="none" stroke="white" stroke-width="7" stroke-linejoin="round"/>
+              <ellipse cx="50" cy="65" rx="15" ry="19" fill="white"/>
+              <ellipse cx="50" cy="65" rx="8" ry="11" fill="#1a1a2e"/>
+              <circle cx="50" cy="65" r="4" fill="white"/>
+            </svg>
+            <span>YGO</span>
+          </button>
+          <button class="tcg-btn" id="tcg-btn-op" onclick="selectGame('op')" title="One Piece">
+            <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Jolly Roger skull -->
+              <circle cx="50" cy="36" r="25" fill="white"/>
+              <circle cx="40" cy="31" r="7" fill="#1a1a2e"/>
+              <circle cx="60" cy="31" r="7" fill="#1a1a2e"/>
+              <path d="M39 47 Q50 55 61 47" stroke="#1a1a2e" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <!-- Crossbones -->
+              <line x1="12" y1="68" x2="88" y2="90" stroke="white" stroke-width="9" stroke-linecap="round"/>
+              <line x1="88" y1="68" x2="12" y2="90" stroke="white" stroke-width="9" stroke-linecap="round"/>
+            </svg>
+            <span>OP</span>
           </button>
         </div>
       </div>
@@ -809,7 +859,7 @@
     <button class="btn btn-orange"  id="btn-deselect" onclick="deselectAll()" disabled>☐ Deselect All</button>
     <button class="btn btn-gray"    id="btn-clear" onclick="clearSearch()">✕ Clear Search</button>
     <button class="btn btn-red"     id="btn-reset" onclick="openResetModal()">⟳ Reset</button>
-    <span style="margin-left:auto;font-size:11px;color:var(--credit-muted);letter-spacing:0.4px;white-space:nowrap;">crafted by <strong style="color:var(--credit-color);">QuestionGod</strong> <button onclick="openVersionModal()" style="background:none;border:1px solid var(--credit-muted);border-radius:10px;color:var(--credit-muted);font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;opacity:0.75;letter-spacing:0.3px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">v1.7</button></span>
+    <span style="margin-left:auto;font-size:11px;color:var(--credit-muted);letter-spacing:0.4px;white-space:nowrap;">crafted by <strong style="color:var(--credit-color);">QuestionGod</strong> <button onclick="openVersionModal()" style="background:none;border:1px solid var(--credit-muted);border-radius:10px;color:var(--credit-muted);font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;opacity:0.75;letter-spacing:0.3px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">v1.8</button></span>
   </div>
 
   <!-- Input panel -->
@@ -939,7 +989,7 @@ const GAME_CONFIGS = {
     sheetId:    '1p-6RCADLI0KvRstxEEG8oTZdLXzDc-PSY_rDv-0f-44',
     sheetName:  'PKM SINGLES',
     range:      'A1:C10000',
-    skipRows:   2,   // skip row 0 (purchase link), row 1 (headers)
+    skipRows:   2,
     skipWords:  [],
     checkStrikethrough: true,
     modestCols:  [],
@@ -948,7 +998,37 @@ const GAME_CONFIGS = {
     inputHint:  'Paste your Pokémon card list below, one card per line.',
     inputPlaceholder: 'Paste your Pokémon card list here...\n\nExample:\nCharizard\nPikachu\nMewtwo EX',
     showAutoPick: false,
-    langCol: null,   // search all columns
+    langCol: null,
+  },
+  ygo: {
+    sheetId:    '1p-6RCADLI0KvRstxEEG8oTZdLXzDc-PSY_rDv-0f-44',
+    sheetName:  'YGO',
+    range:      'A1:F10000',
+    skipRows:   4,   // rows 1-4 are headers
+    skipWords:  [],
+    checkStrikethrough: true,
+    modestCols:  [],
+    blingedCols: [],
+    colLabels:  ['Col A','Col B','Col C','Col D','Col E','Col F'],
+    inputHint:  'Paste your Yu-Gi-Oh! card list below, one card per line.',
+    inputPlaceholder: 'Paste your Yu-Gi-Oh! card list here...\n\nExample:\nBlue-Eyes White Dragon\nDark Magician\nExodia the Forbidden One',
+    showAutoPick: false,
+    langCol: null,
+  },
+  op: {
+    sheetId:    '1p-6RCADLI0KvRstxEEG8oTZdLXzDc-PSY_rDv-0f-44',
+    sheetName:  'ONE PIECE',
+    range:      'A1:F10000',
+    skipRows:   6,   // rows 1-6 are headers
+    skipWords:  [],
+    checkStrikethrough: true,
+    modestCols:  [],
+    blingedCols: [],
+    colLabels:  ['Col A','Col B','Col C','Col D','Col E','Col F'],
+    inputHint:  'Paste your One Piece card list below, one card per line.',
+    inputPlaceholder: 'Paste your One Piece card list here...\n\nExample:\nMonkey D. Luffy\nRoronoa Zoro\nNami',
+    showAutoPick: false,
+    langCol: null,
   }
 };
 
@@ -976,18 +1056,15 @@ let singlesLoaded = false;
 // =============================================
 function selectGame(game) {
   if (game === currentGame) return;
-  document.getElementById('tcg-btn-mtg').classList.toggle('active', game === 'mtg');
-  document.getElementById('tcg-btn-pkm').classList.toggle('active', game === 'pkm');
-  // Reuse switchGame logic by temporarily setting currentGame
-  const prev = currentGame;
-  currentGame = prev; // reset so switchGame sees a change
-  // Fake the old select approach
-  const fakeEvent = game;
+  ['mtg','pkm','ygo','op'].forEach(g => {
+    const btn = document.getElementById('tcg-btn-' + g);
+    if (btn) btn.classList.toggle('active', g === game);
+  });
   switchGame(game);
 }
 
 function switchGame(forceGame) {
-  const newGame = forceGame || document.getElementById('game-select')?.value || currentGame;
+  const newGame = forceGame || currentGame;
   if (newGame === currentGame && !forceGame) return;
 
   currentGame = newGame;
@@ -1000,13 +1077,14 @@ function switchGame(forceGame) {
 
   // Theme — fade transition
   document.body.style.transition = 'background 0.4s ease';
-  document.body.className = currentGame === 'pkm' ? 'theme-pkm' : '';
+  const themeMap = { mtg: '', pkm: 'theme-pkm', ygo: 'theme-ygo', op: 'theme-op' };
+  document.body.className = themeMap[currentGame] || '';
 
   // Update button states
-  const mtgBtn = document.getElementById('tcg-btn-mtg');
-  const pkmBtn = document.getElementById('tcg-btn-pkm');
-  if (mtgBtn) mtgBtn.classList.toggle('active', currentGame === 'mtg');
-  if (pkmBtn) pkmBtn.classList.toggle('active', currentGame === 'pkm');
+  ['mtg','pkm','ygo','op'].forEach(g => {
+    const btn = document.getElementById('tcg-btn-' + g);
+    if (btn) btn.classList.toggle('active', g === currentGame);
+  });
 
   // Auto-pick buttons
   document.getElementById('auto-pick-btns').style.display = cfg.showAutoPick ? '' : 'none';
@@ -1037,7 +1115,8 @@ async function loadSingles(force = false) {
   if (singlesLoaded && !force) return;
 
   const cfg = GAME_CONFIGS[currentGame];
-  const gameName = currentGame === 'mtg' ? 'Magic' : 'Pokémon';
+  const gameNames = { mtg: 'Magic', pkm: 'Pokémon', ygo: 'Yu-Gi-Oh!', op: 'One Piece' };
+  const gameName = gameNames[currentGame] || currentGame.toUpperCase();
 
   setStatus(`Loading ${gameName} singles...`, 'info');
   showProgress(0, 'Fetching sheet data...');
@@ -1969,6 +2048,15 @@ function togglePanel(id) {
   <div class="modal-box" style="max-width:480px;">
     <h3 style="margin-bottom:16px;font-size:16px;color:#333;">📋 Version History</h3>
     <div style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;padding-right:4px;">
+
+      <div class="vlog-entry">
+        <span class="vlog-ver">v1.8</span>
+        <div class="vlog-notes">
+          <div>Yu-Gi-Oh! support with purple theme</div>
+          <div>One Piece support with orange theme</div>
+          <div>TCG switcher expanded to 4 games</div>
+        </div>
+      </div>
 
       <div class="vlog-entry">
         <span class="vlog-ver">v1.7</span>
