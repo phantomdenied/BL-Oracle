@@ -697,10 +697,11 @@
     color: white;
     box-shadow: 0 1px 4px rgba(0,0,0,0.3);
   }
-  .tcg-btn svg { flex-shrink: 0; }
+  .tcg-btn .ms { color: inherit; }
 
 
 </style>
+  <link href="https://cdn.jsdelivr.net/npm/mana-font@latest/css/mana.min.css" rel="stylesheet">
 </head>
 <body>
 
@@ -743,21 +744,23 @@
         <label>TCG</label>
         <div class="tcg-toggle">
           <button class="tcg-btn active" id="tcg-btn-mtg" onclick="selectGame('mtg')" title="Magic: The Gathering">
-            <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- MTG tap symbol / loyalty spike shape -->
-              <polygon points="50,4 61,35 95,35 68,57 79,88 50,68 21,88 32,57 5,35 39,35" fill="currentColor" opacity="0.9"/>
-            </svg>
+            <i class="ms ms-planeswalker ms-fw" style="font-size:16px;"></i>
             <span>MTG</span>
           </button>
           <button class="tcg-btn" id="tcg-btn-pkm" onclick="selectGame('pkm')" title="Pokémon">
-            <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Pikachu lightning bolt ear silhouette -->
-              <circle cx="50" cy="50" r="46" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="3"/>
-              <!-- Pokéball dividing line -->
-              <path d="M4 50 Q50 50 96 50" stroke="currentColor" stroke-width="5"/>
-              <!-- Center circle -->
-              <circle cx="50" cy="50" r="12" fill="currentColor"/>
-              <circle cx="50" cy="50" r="6" fill="none" stroke="white" stroke-width="3"/>
+            <svg width="20" height="20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Pokéball outer circle -->
+              <circle cx="50" cy="50" r="47" fill="white" stroke="white" stroke-width="2"/>
+              <!-- Top half — white (already white) -->
+              <!-- Bottom half — white -->
+              <!-- Red top half -->
+              <path d="M3 50 A47 47 0 0 1 97 50 Z" fill="#e53935"/>
+              <!-- Black dividing band -->
+              <rect x="3" y="44" width="94" height="12" fill="#222"/>
+              <!-- Center button outer -->
+              <circle cx="50" cy="50" r="14" fill="#222"/>
+              <!-- Center button inner -->
+              <circle cx="50" cy="50" r="8" fill="white"/>
             </svg>
             <span>PKM</span>
           </button>
