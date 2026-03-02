@@ -1,4 +1,0 @@
-[[redirects]]
-  from = "/api/gphoto"
-  to = "/.netlify/functions/gphoto"
-  status = 200
