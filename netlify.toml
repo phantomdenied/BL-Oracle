@@ -1,0 +1,9 @@
+[[redirects]]
+  from = "/api/gphoto"
+  to = "/.netlify/functions/gphoto"
+  status = 200
+
+[[redirects]]
+  from = "/api/decks"
+  to = "/.netlify/functions/decks"
+  status = 200
