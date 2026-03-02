@@ -725,13 +725,6 @@
       </div>
     </div>
   </div>
-  <div class="game-switcher">
-      <label>Game</label>
-      <select id="game-select" onchange="switchGame()">
-        <option value="mtg">🧙 Magic: The Gathering</option>
-        <option value="pkm">🎮 Pokémon</option>
-      </select>
-    </div>
     <div class="auth-area">
     <div style="font-size:12px;color:#aaa;" id="singles-status">Singles: not loaded</div>
     <button class="btn-signin" id="btn-signin" onclick="signIn()">
@@ -773,7 +766,14 @@
     <button class="btn btn-orange"  id="btn-deselect" onclick="deselectAll()" disabled>☐ Deselect All</button>
     <button class="btn btn-gray"    id="btn-clear" onclick="clearSearch()">✕ Clear Search</button>
     <button class="btn btn-red"     id="btn-reset" onclick="openResetModal()">⟳ Reset</button>
-    <span style="margin-left:auto;font-size:11px;color:var(--credit-muted);letter-spacing:0.4px;white-space:nowrap;">crafted by <strong style="color:var(--credit-color);">QuestionGod</strong> <button onclick="openVersionModal()" style="background:none;border:1px solid var(--credit-muted);border-radius:10px;color:var(--credit-muted);font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;opacity:0.75;letter-spacing:0.3px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">v1.5</button></span>
+    <div class="game-switcher" style="margin-left:8px;">
+      <label>Game</label>
+      <select id="game-select" onchange="switchGame()">
+        <option value="mtg">🧙 MTG</option>
+        <option value="pkm">🎮 Pokémon</option>
+      </select>
+    </div>
+    <span style="margin-left:auto;font-size:11px;color:var(--credit-muted);letter-spacing:0.4px;white-space:nowrap;">crafted by <strong style="color:var(--credit-color);">QuestionGod</strong> <button onclick="openVersionModal()" style="background:none;border:1px solid var(--credit-muted);border-radius:10px;color:var(--credit-muted);font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;opacity:0.75;letter-spacing:0.3px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">v1.6</button></span>
   </div>
 
   <!-- Input panel -->
@@ -989,6 +989,10 @@ async function loadSingles(force = false) {
     document.getElementById('singles-status').textContent = `${gameName}: ${singlesData.length} cards loaded`;
     setStatus(`✔ ${gameName} singles loaded — ${singlesData.length} cards ready.`, 'success');
     hideProgress();
+    // Check admin baseline after singles load
+    if (typeof checkBaseline === 'function' && typeof currentUser !== 'undefined') {
+      checkBaseline(currentUser);
+    }
   } catch(e) {
     setStatus('Error loading sheet: ' + e.message, 'error');
     hideProgress();
@@ -1888,6 +1892,17 @@ function togglePanel(id) {
     <div style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;padding-right:4px;">
 
       <div class="vlog-entry">
+        <span class="vlog-ver">v1.6</span>
+        <div class="vlog-notes">
+          <div>Hover preview — cards with a Google Photos link show image popup on hover</div>
+          <div>Count-up animation on search result summary numbers</div>
+          <div>Smooth scroll to results after search</div>
+          <div>Export button pulses when new results arrive</div>
+          <div>Game switcher moved to bottom toolbar</div>
+        </div>
+      </div>
+
+      <div class="vlog-entry">
         <span class="vlog-ver">v1.5</span>
         <div class="vlog-notes">
           <div>Dual-face card matching — exact/partial split into separate result rows</div>
@@ -1960,7 +1975,233 @@ function togglePanel(id) {
   }
   .vlog-notes { display: flex; flex-direction: column; gap: 4px; }
   .vlog-notes div { font-size: 12px; color: #555; }
+
+  /* ── Hover preview popup ── */
+  .card-thumb-popup {
+    display: none;
+    position: fixed;
+    z-index: 9000;
+    pointer-events: none;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px 4px var(--accent);
+    width: 220px;
+    height: 200px;
+    background: #0f0720;
+    border: 1px solid var(--accent);
+  }
+  .card-thumb-popup img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .card-thumb-popup[data-loading] {
+    background: linear-gradient(90deg, #1a1a3e 25%, #2e1065 50%, #1a1a3e 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── Toolbar pulse ── */
+  @keyframes btnPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(124,58,237,0.7); }
+    50%  { box-shadow: 0 0 0 8px rgba(124,58,237,0); }
+    100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
+  }
+  .btn-pulse {
+    animation: btnPulse 0.6s ease-out 2;
+  }
+
+
 </style>
 
+<!-- Card image hover popup -->
+<div id="card-thumb-popup" class="card-thumb-popup">
+  <img id="card-thumb-popup-img" src="" alt="">
+</div>
+
+<script>
+// =============================================
+// GOOGLE PHOTOS HOVER PREVIEW
+// =============================================
+const GPHOTO_FUNC = '/api/gphoto';
+
+// Cache resolved Google Photos URLs — only hit the function once per URL per session
+const _gphotoCache = {};  // shortUrl → lh3 URL | 'pending' | 'failed'
+
+function isGooglePhotosUrl(url) {
+  return url && (
+    url.includes('photos.app.goo.gl') ||
+    url.includes('photos.google.com') ||
+    url.includes('lh3.googleusercontent.com')
+  );
+}
+
+async function resolveGphotoUrl(shortUrl) {
+  const cached = _gphotoCache[shortUrl];
+  if (cached && cached !== 'pending') {
+    return cached === 'failed' ? null : cached;
+  }
+  _gphotoCache[shortUrl] = 'pending';
+  try {
+    const res = await fetch(`${GPHOTO_FUNC}?url=${encodeURIComponent(shortUrl)}`);
+    if (!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    if (data.image) {
+      _gphotoCache[shortUrl] = data.image;
+      return data.image;
+    }
+    _gphotoCache[shortUrl] = 'failed';
+    return null;
+  } catch(e) {
+    _gphotoCache[shortUrl] = 'failed';
+    return null;
+  }
+}
+
+// =============================================
+// POPUP
+// =============================================
+const _popup    = document.getElementById('card-thumb-popup');
+const _popupImg = document.getElementById('card-thumb-popup-img');
+let _popupTimeout = null;
+
+function showCardPopup(event, imgUrl) {
+  clearTimeout(_popupTimeout);
+  _popupImg.src = imgUrl;
+  _popup.style.display = 'block';
+  movePopup(event);
+}
+
+async function showSheetUrlPopup(event, sheetUrl) {
+  clearTimeout(_popupTimeout);
+  if (!isGooglePhotosUrl(sheetUrl)) return;
+
+  const cached = _gphotoCache[sheetUrl];
+  if (cached && cached !== 'pending' && cached !== 'failed') {
+    showCardPopup(event, cached);
+    return;
+  }
+  if (cached === 'failed') return;
+
+  // Show shimmer while resolving
+  _popupImg.src = '';
+  _popup.style.display = 'block';
+  _popup.dataset.loading = '1';
+  movePopup(event);
+
+  const resolved = await resolveGphotoUrl(sheetUrl);
+  delete _popup.dataset.loading;
+
+  if (_popup.style.display === 'block' && resolved) {
+    _popupImg.src = resolved;
+  } else if (!resolved) {
+    _popup.style.display = 'none';
+  }
+}
+
+function hideCardPopup() {
+  _popupTimeout = setTimeout(() => { _popup.style.display = 'none'; }, 80);
+}
+
+document.addEventListener('mousemove', e => {
+  if (_popup.style.display === 'block') movePopup(e);
+});
+
+function movePopup(e) {
+  const pw = 220, ph = 200;
+  let x = e.clientX + 16, y = e.clientY - ph / 2;
+  if (x + pw > window.innerWidth)  x = e.clientX - pw - 16;
+  if (y < 8)                        y = 8;
+  if (y + ph > window.innerHeight)  y = window.innerHeight - ph - 8;
+  _popup.style.left = x + 'px';
+  _popup.style.top  = y + 'px';
+}
+
+// =============================================
+// PATCH renderResults — attach hover previews
+// =============================================
+const _origRenderResults = window.renderResults || renderResults;
+
+function renderResultsPatched(filter = 'all') {
+  currentFilter = filter;
+  _origRenderResults(filter);
+
+  // Attach Google Photos hover popup to any match link with a sheet URL
+  const tbody = document.getElementById('results-tbody');
+  tbody.querySelectorAll('a.match-link').forEach(a => {
+    if (a.href && isGooglePhotosUrl(a.href)) {
+      const sheetUrl = a.href;
+      a.addEventListener('mouseenter', e => showSheetUrlPopup(e, sheetUrl));
+      a.addEventListener('mouseleave', hideCardPopup);
+    }
+  });
+}
+
+let currentFilter = 'all';
+window.renderResults = renderResultsPatched;
+window.filterResults = (type) => renderResultsPatched(type);
+
+// =============================================
+// SUMMARY COUNT-UP ANIMATION
+// =============================================
+function animateCount(el, target, duration = 600) {
+  const start = performance.now();
+  function step(now) {
+    const pct = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - pct, 3);
+    el.textContent = Math.round(eased * target);
+    if (pct < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function renderSummaryAnimated(exact, partial, notFound) {
+  document.getElementById('summary-row').innerHTML = `
+    <div class="summary-card sc-exact"><div class="num" id="sc-exact">0</div><div class="lbl">Exact Matches</div></div>
+    <div class="summary-card sc-partial"><div class="num" id="sc-partial">0</div><div class="lbl">Partial Matches</div></div>
+    <div class="summary-card sc-none"><div class="num" id="sc-none">0</div><div class="lbl">Not Found</div></div>
+  `;
+  animateCount(document.getElementById('sc-exact'),   exact);
+  animateCount(document.getElementById('sc-partial'), partial);
+  animateCount(document.getElementById('sc-none'),    notFound);
+}
+window.renderSummary = renderSummaryAnimated;
+
+// =============================================
+// TOOLBAR PULSE
+// =============================================
+function pulseExportButtons() {
+  const el = document.getElementById('btn-create');
+  if (!el) return;
+  el.classList.remove('btn-pulse');
+  void el.offsetWidth;
+  el.classList.add('btn-pulse');
+  setTimeout(() => el.classList.remove('btn-pulse'), 1500);
+}
+
+// =============================================
+// SMOOTH SCROLL TO RESULTS
+// =============================================
+function scrollToResults() {
+  const panel = document.getElementById('results-panel');
+  if (panel) setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// =============================================
+// PATCH runSearch — scroll + pulse on complete
+// =============================================
+const _origRunSearch = window.runSearch;
+window.runSearch = async function() {
+  await _origRunSearch.apply(this, arguments);
+  scrollToResults();
+  pulseExportButtons();
+};
+</script>
 </body>
+
 </html>
