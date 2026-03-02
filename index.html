@@ -669,19 +669,35 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
-  .game-switcher select {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.25);
-    color: white;
+  .tcg-toggle {
+    display: flex;
+    gap: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .tcg-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: none;
     border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    padding: 5px 10px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    outline: none;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
   }
-  .game-switcher select:focus { border-color: rgba(255,255,255,0.5); }
-  .game-switcher select option { background: #1a1a2e; color: white; }
+  .tcg-btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+  .tcg-btn.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .tcg-btn svg { flex-shrink: 0; }
 
 
 </style>
@@ -724,11 +740,28 @@
         <div class="subtitle">See all. Miss nothing.</div>
       </div>
       <div class="game-switcher" style="margin-left:16px;">
-        <label>Game</label>
-        <select id="game-select" onchange="switchGame()">
-          <option value="mtg">🧙 MTG</option>
-          <option value="pkm">🎮 Pokémon</option>
-        </select>
+        <label>TCG</label>
+        <div class="tcg-toggle">
+          <button class="tcg-btn active" id="tcg-btn-mtg" onclick="selectGame('mtg')" title="Magic: The Gathering">
+            <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- MTG tap symbol / loyalty spike shape -->
+              <polygon points="50,4 61,35 95,35 68,57 79,88 50,68 21,88 32,57 5,35 39,35" fill="currentColor" opacity="0.9"/>
+            </svg>
+            <span>MTG</span>
+          </button>
+          <button class="tcg-btn" id="tcg-btn-pkm" onclick="selectGame('pkm')" title="Pokémon">
+            <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Pikachu lightning bolt ear silhouette -->
+              <circle cx="50" cy="50" r="46" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="3"/>
+              <!-- Pokéball dividing line -->
+              <path d="M4 50 Q50 50 96 50" stroke="currentColor" stroke-width="5"/>
+              <!-- Center circle -->
+              <circle cx="50" cy="50" r="12" fill="currentColor"/>
+              <circle cx="50" cy="50" r="6" fill="none" stroke="white" stroke-width="3"/>
+            </svg>
+            <span>PKM</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -773,7 +806,7 @@
     <button class="btn btn-orange"  id="btn-deselect" onclick="deselectAll()" disabled>☐ Deselect All</button>
     <button class="btn btn-gray"    id="btn-clear" onclick="clearSearch()">✕ Clear Search</button>
     <button class="btn btn-red"     id="btn-reset" onclick="openResetModal()">⟳ Reset</button>
-    <span style="margin-left:auto;font-size:11px;color:var(--credit-muted);letter-spacing:0.4px;white-space:nowrap;">crafted by <strong style="color:var(--credit-color);">QuestionGod</strong> <button onclick="openVersionModal()" style="background:none;border:1px solid var(--credit-muted);border-radius:10px;color:var(--credit-muted);font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;opacity:0.75;letter-spacing:0.3px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">v1.6</button></span>
+    <span style="margin-left:auto;font-size:11px;color:var(--credit-muted);letter-spacing:0.4px;white-space:nowrap;">crafted by <strong style="color:var(--credit-color);">QuestionGod</strong> <button onclick="openVersionModal()" style="background:none;border:1px solid var(--credit-muted);border-radius:10px;color:var(--credit-muted);font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;opacity:0.75;letter-spacing:0.3px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">v1.7</button></span>
   </div>
 
   <!-- Input panel -->
@@ -938,10 +971,21 @@ let singlesLoaded = false;
 // =============================================
 // GAME SWITCHER
 // =============================================
-function switchGame() {
-  const sel = document.getElementById('game-select');
-  const newGame = sel.value;
-  if (newGame === currentGame) return;
+function selectGame(game) {
+  if (game === currentGame) return;
+  document.getElementById('tcg-btn-mtg').classList.toggle('active', game === 'mtg');
+  document.getElementById('tcg-btn-pkm').classList.toggle('active', game === 'pkm');
+  // Reuse switchGame logic by temporarily setting currentGame
+  const prev = currentGame;
+  currentGame = prev; // reset so switchGame sees a change
+  // Fake the old select approach
+  const fakeEvent = game;
+  switchGame(game);
+}
+
+function switchGame(forceGame) {
+  const newGame = forceGame || document.getElementById('game-select')?.value || currentGame;
+  if (newGame === currentGame && !forceGame) return;
 
   currentGame = newGame;
   singlesLoaded = false;
@@ -954,6 +998,12 @@ function switchGame() {
   // Theme — fade transition
   document.body.style.transition = 'background 0.4s ease';
   document.body.className = currentGame === 'pkm' ? 'theme-pkm' : '';
+
+  // Update button states
+  const mtgBtn = document.getElementById('tcg-btn-mtg');
+  const pkmBtn = document.getElementById('tcg-btn-pkm');
+  if (mtgBtn) mtgBtn.classList.toggle('active', currentGame === 'mtg');
+  if (pkmBtn) pkmBtn.classList.toggle('active', currentGame === 'pkm');
 
   // Auto-pick buttons
   document.getElementById('auto-pick-btns').style.display = cfg.showAutoPick ? '' : 'none';
@@ -1349,7 +1399,7 @@ function renderResults(filter = 'all') {
             ? `<a class="match-label match-link" href="${esc(match.url)}" target="_blank" rel="noopener">${esc(match.value)}</a>`
             : `<span class="match-label">${esc(match.value)}</span>`;
           const colClass = getColClass(match.col);
-          html += `<td class="${cellClass}"><span class="match-cell ${colClass}"><span class="cell-strip"></span><span class="cell-text">${matchLabel}<span class="col-badge">${String.fromCharCode(65+match.col)}</span></span></span></td>`;
+          html += `<td class="${cellClass}"><span class="match-cell ${colClass}"><span class="cell-strip"></span><span class="cell-text">${matchLabel}</span></span></td>`;
         } else {
           html += `<td></td><td></td>`;
         }
@@ -1918,13 +1968,23 @@ function togglePanel(id) {
     <div style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;padding-right:4px;">
 
       <div class="vlog-entry">
+        <span class="vlog-ver">v1.7</span>
+        <div class="vlog-notes">
+          <div>Foil &amp; holo column indicators with animated corner strips</div>
+          <div>Hover photo preview for cards with Google Photos sheet links</div>
+          <div>Deck name shown in results panel header after creating lists</div>
+          <div>Copy buttons pulse when lists are generated</div>
+          <div>Animated theme transition when switching TCGs</div>
+          <div>TCG switcher moved to header</div>
+          <div>UI improvements &amp; animation polish</div>
+        </div>
+      </div>
+
+      <div class="vlog-entry">
         <span class="vlog-ver">v1.6</span>
         <div class="vlog-notes">
-          <div>Hover preview — cards with a Google Photos link show image popup on hover</div>
-          <div>Count-up animation on search result summary numbers</div>
           <div>Smooth scroll to results after search</div>
-          <div>Export button pulses when new results arrive</div>
-          <div>Game switcher moved to bottom toolbar</div>
+          <div>UI improvements</div>
         </div>
       </div>
 
@@ -2256,7 +2316,7 @@ window.filterResults = (type) => renderResultsPatched(type);
 // =============================================
 // SUMMARY COUNT-UP ANIMATION
 // =============================================
-function animateCount(el, target, duration = 1200) {
+function animateCount(el, target, duration = 2500) {
   const start = performance.now();
   function step(now) {
     const pct = Math.min((now - start) / duration, 1);
