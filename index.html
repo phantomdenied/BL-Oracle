@@ -723,6 +723,13 @@
         <h1 style="font-size:22px;letter-spacing:1px;">The Oracle</h1>
         <div class="subtitle">See all. Miss nothing.</div>
       </div>
+      <div class="game-switcher" style="margin-left:16px;">
+        <label>Game</label>
+        <select id="game-select" onchange="switchGame()">
+          <option value="mtg">🧙 MTG</option>
+          <option value="pkm">🎮 Pokémon</option>
+        </select>
+      </div>
     </div>
   </div>
     <div class="auth-area">
@@ -766,13 +773,6 @@
     <button class="btn btn-orange"  id="btn-deselect" onclick="deselectAll()" disabled>☐ Deselect All</button>
     <button class="btn btn-gray"    id="btn-clear" onclick="clearSearch()">✕ Clear Search</button>
     <button class="btn btn-red"     id="btn-reset" onclick="openResetModal()">⟳ Reset</button>
-    <div class="game-switcher" style="margin-left:8px;">
-      <label>Game</label>
-      <select id="game-select" onchange="switchGame()">
-        <option value="mtg">🧙 MTG</option>
-        <option value="pkm">🎮 Pokémon</option>
-      </select>
-    </div>
     <span style="margin-left:auto;font-size:11px;color:var(--credit-muted);letter-spacing:0.4px;white-space:nowrap;">crafted by <strong style="color:var(--credit-color);">QuestionGod</strong> <button onclick="openVersionModal()" style="background:none;border:1px solid var(--credit-muted);border-radius:10px;color:var(--credit-muted);font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;opacity:0.75;letter-spacing:0.3px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">v1.6</button></span>
   </div>
 
@@ -790,7 +790,7 @@
   <!-- Results panel (hidden until search runs) -->
   <div class="panel hidden" id="results-panel">
     <div class="panel-header" onclick="togglePanel('results-panel')">
-      <span class="panel-title">🔎 Search Results</span>
+      <span class="panel-title">🔎 <span id="results-panel-title">Search Results</span></span>
       <span class="panel-chevron" id="results-panel-chev">▼</span>
     </div>
     <div class="panel-body" id="results-panel-body">
@@ -919,6 +919,14 @@ const GAME_CONFIGS = {
 let currentGame = 'mtg';
 let currentLang = 'en';   // for Pokemon
 
+// Returns CSS class based on column index
+function getColClass(col) {
+  const cfg = GAME_CONFIGS[currentGame];
+  if (cfg.blingedCols && cfg.blingedCols.includes(col)) return 'col-foil';
+  if (cfg.modestCols  && cfg.modestCols.includes(col))  return 'col-holo';
+  return 'col-plain';
+}
+
 // =============================================
 // STATE
 // =============================================
@@ -943,7 +951,8 @@ function switchGame() {
 
   const cfg = GAME_CONFIGS[currentGame];
 
-  // Theme
+  // Theme — fade transition
+  document.body.style.transition = 'background 0.4s ease';
   document.body.className = currentGame === 'pkm' ? 'theme-pkm' : '';
 
   // Auto-pick buttons
@@ -1339,7 +1348,8 @@ function renderResults(filter = 'all') {
           const matchLabel = match.url
             ? `<a class="match-label match-link" href="${esc(match.url)}" target="_blank" rel="noopener">${esc(match.value)}</a>`
             : `<span class="match-label">${esc(match.value)}</span>`;
-          html += `<td class="${cellClass}">${matchLabel}</td>`;
+          const colClass = getColClass(match.col);
+          html += `<td class="${cellClass}"><span class="match-cell ${colClass}"><span class="cell-strip"></span><span class="cell-text">${matchLabel}<span class="col-badge">${String.fromCharCode(65+match.col)}</span></span></span></td>`;
         } else {
           html += `<td></td><td></td>`;
         }
@@ -1567,6 +1577,20 @@ function createLists(name) {
 
   document.getElementById('lists-panel').scrollIntoView({ behavior: 'smooth' });
 
+  // Update results panel title to show deck name
+  const titleEl = document.getElementById('results-panel-title');
+  if (titleEl) titleEl.textContent = `Search Results — ${name}`;
+
+  // Pulse the copy buttons
+  ['bl', 'tcg'].forEach(which => {
+    const btn = document.querySelector(`.list-box-header.${which} .copy-btn`);
+    if (!btn) return;
+    btn.classList.remove('copy-btn-pulse');
+    void btn.offsetWidth;
+    btn.classList.add('copy-btn-pulse');
+    setTimeout(() => btn.classList.remove('copy-btn-pulse'), 1200);
+  });
+
   // Summary
   document.getElementById('lists-summary-row').innerHTML = `
     <div class="summary-card sc-bl"><div class="num">${blTotal}</div><div class="lbl">Total BL Cards</div></div>
@@ -1617,6 +1641,8 @@ function clearSearch() {
   document.getElementById('summary-row').innerHTML = '';
   document.getElementById('btn-create').disabled = true;
   document.getElementById('btn-deselect').disabled = true;
+  const titleEl = document.getElementById('results-panel-title');
+  if (titleEl) titleEl.textContent = 'Search Results';
 
   // Re-expand the input panel
   const body   = document.getElementById('input-panel-body');
@@ -1976,7 +2002,88 @@ function togglePanel(id) {
   .vlog-notes { display: flex; flex-direction: column; gap: 4px; }
   .vlog-notes div { font-size: 12px; color: #555; }
 
-  /* ── Hover preview popup ── */
+  /* ── Theme transition ── */
+  body, .app-header, .panel-header, .top-bar {
+    transition: background 0.4s ease, background-color 0.4s ease, border-color 0.3s ease;
+  }
+
+  /* ── Column strip indicators ── */
+  .match-cell {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    padding: 3px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+  }
+  .cell-strip {
+    position: absolute;
+    bottom: 0; left: 0;
+    pointer-events: none;
+    z-index: 0;
+    clip-path: polygon(0 100%, 100% 100%, 0 0);
+  }
+  .cell-text {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .col-badge {
+    font-size: 10px;
+    font-weight: 800;
+    opacity: 0.4;
+    flex-shrink: 0;
+  }
+  /* Plain — no strip */
+  .col-plain .cell-strip { display: none; }
+  /* Holo — purple triangle */
+  .col-holo .cell-strip {
+    width: 24px; height: 24px;
+    background: linear-gradient(135deg, #a78bfa 0%, #818cf8 40%, #c4b5fd 60%, #a78bfa 100%);
+    animation: holoPulse 3.5s ease-in-out infinite;
+    transform-origin: bottom left;
+  }
+  @keyframes holoPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1);    }
+    50%       { opacity: 1;   transform: scale(1.18); }
+  }
+  /* Foil — prismatic triangle */
+  .col-foil .cell-strip {
+    width: 24px; height: 24px;
+    background: linear-gradient(135deg,
+      #9090ff 0%, #d0d0ff 12%, #70c8ff 22%, #c0c0ff 32%,
+      #ff90c8 42%, #d0d0ff 52%, #70eebb 62%,
+      #c0c0ff 72%, #a090ff 82%, #d8d8ff 90%, #9090ff 100%
+    );
+    background-size: 300% 300%;
+    animation: foilShimmer 4.5s ease-in-out infinite;
+    filter: brightness(0.95) contrast(1.2) saturate(1.5);
+  }
+  @keyframes foilShimmer {
+    0%   { background-position: 0% 0%;     opacity: 0.8;  }
+    25%  { background-position: 100% 0%;   opacity: 1;    }
+    50%  { background-position: 100% 100%; opacity: 0.85; }
+    75%  { background-position: 0% 100%;   opacity: 1;    }
+    100% { background-position: 0% 0%;     opacity: 0.8;  }
+  }
+
+  /* ── Copy button pulse ── */
+  @keyframes copyPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
+    50%  { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0);   }
+  }
+  .copy-btn-pulse {
+    animation: copyPulse 0.5s ease-out 2;
+  }
   .card-thumb-popup {
     display: none;
     position: fixed;
@@ -2149,7 +2256,7 @@ window.filterResults = (type) => renderResultsPatched(type);
 // =============================================
 // SUMMARY COUNT-UP ANIMATION
 // =============================================
-function animateCount(el, target, duration = 600) {
+function animateCount(el, target, duration = 1200) {
   const start = performance.now();
   function step(now) {
     const pct = Math.min((now - start) / duration, 1);
