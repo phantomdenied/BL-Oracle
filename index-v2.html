@@ -848,6 +848,15 @@ kbd {
   width: 1px; align-self: stretch; background: var(--border); margin: 2px 3px;
 }
 
+/* The images toggle fills the preview slots in the card layout, so it only
+   appears at the widths where that layout is used. Desktop keeps the
+   cursor-following hover preview instead. */
+#btn-images, #images-divider { display: none; }
+@media (max-width: 760px) {
+  #btn-images { display: inline-flex; }
+  #images-divider { display: block; }
+}
+
 @media (max-width: 620px) {
   .toolrow { gap: 6px; }
   .seg { width: 100%; }
@@ -952,29 +961,30 @@ input[type="checkbox"] {
 /* Keep the name clear of the corner triangle */
 .col-holo .match-text, .col-foil .match-text { padding-left: 13px; }
 
-/* ── Print-type badge ──────────────────────────────────────────────────────
-   Standalone swatch of the same triangle used in the results table and the
-   help-modal legend. Used in the mobile card layout, where the corner strip
-   has nowhere to sit. Plain prints render nothing, exactly as on desktop.
+/* ── Print-type strip, mobile ──────────────────────────────────────────────
+   Same geometry as the table: right angle at the bottom-left, anchored to the
+   corner of the row so it sits under the card's text rather than beside it.
    ───────────────────────────────────────────────────────────────────────── */
 .print-badge {
-  width: 13px; height: 13px;
-  flex-shrink: 0;
-  clip-path: polygon(0 100%, 100% 100%, 100% 0);
-  border-radius: 1px;
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 20px; height: 20px;
+  pointer-events: none;
+  z-index: 0;
+  clip-path: polygon(0 100%, 100% 100%, 0 0);
 }
 .print-badge.col-plain { display: none; }
 .print-badge.col-holo {
-  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 40%, #c4b5fd 60%, #a78bfa 100%);
+  background: var(--silver);
+  background-size: 300% 300%;
+  animation: metalShimmer 5s ease-in-out infinite;
+  filter: contrast(1.06);
 }
 .print-badge.col-foil {
-  background: linear-gradient(135deg,
-    #9090ff 0%, #d0d0ff 12%, #70c8ff 22%, #c0c0ff 32%,
-    #ff90c8 42%, #d0d0ff 52%, #70eebb 62%,
-    #c0c0ff 72%, #a090ff 82%, #d8d8ff 90%, #9090ff 100%);
+  background: var(--gold);
   background-size: 300% 300%;
-  animation: foilShimmer 4.5s ease-in-out infinite;
-  filter: brightness(0.97) contrast(1.2) saturate(1.5);
+  animation: metalShimmer 4.5s ease-in-out infinite;
+  filter: brightness(1.02) contrast(1.1) saturate(1.15);
 }
 
 /* ── Tap-to-preview overlay (touch devices) ───────────────────────────────── */
@@ -1032,32 +1042,34 @@ input[type="checkbox"] {
   width: 220px; padding: 30px 16px;
   text-align: center; font-size: 12.5px; color: var(--text-faint);
 }
+/* Holo = silver, foil = gold, regular = nothing. Both metals share one
+   shimmer so they read as a matched pair. */
+:root {
+  --silver: linear-gradient(135deg, #7d848f 0%, #c9d0d9 20%, #ffffff 40%,
+                                    #b7bfc9 60%, #eef2f6 78%, #8d949f 100%);
+  --gold:   linear-gradient(135deg, #8a6410 0%, #d4af37 20%, #ffe89a 40%,
+                                    #f0c94f 60%, #fff6c9 78%, #b8860b 100%);
+}
 .col-holo .match-strip {
   width: 22px; height: 22px;
-  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 40%, #c4b5fd 60%, #a78bfa 100%);
-  animation: holoPulse 3.5s ease-in-out infinite;
-  transform-origin: bottom left;
-}
-@keyframes holoPulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.16); }
+  background: var(--silver);
+  background-size: 300% 300%;
+  animation: metalShimmer 5s ease-in-out infinite;
+  filter: contrast(1.06);
 }
 .col-foil .match-strip {
   width: 22px; height: 22px;
-  background: linear-gradient(135deg,
-    #9090ff 0%, #d0d0ff 12%, #70c8ff 22%, #c0c0ff 32%,
-    #ff90c8 42%, #d0d0ff 52%, #70eebb 62%,
-    #c0c0ff 72%, #a090ff 82%, #d8d8ff 90%, #9090ff 100%);
+  background: var(--gold);
   background-size: 300% 300%;
-  animation: foilShimmer 4.5s ease-in-out infinite;
-  filter: brightness(0.97) contrast(1.2) saturate(1.5);
+  animation: metalShimmer 4.5s ease-in-out infinite;
+  filter: brightness(1.02) contrast(1.1) saturate(1.15);
 }
-@keyframes foilShimmer {
-  0%   { background-position: 0% 0%;     opacity: 0.8; }
+@keyframes metalShimmer {
+  0%   { background-position: 0% 0%;     opacity: 0.88; }
   25%  { background-position: 100% 0%;   opacity: 1; }
-  50%  { background-position: 100% 100%; opacity: 0.85; }
+  50%  { background-position: 100% 100%; opacity: 0.9; }
   75%  { background-position: 0% 100%;   opacity: 1; }
-  100% { background-position: 0% 0%;     opacity: 0.8; }
+  100% { background-position: 0% 0%;     opacity: 0.88; }
 }
 
 /* ==========================================================================
@@ -1096,15 +1108,25 @@ input[type="checkbox"] {
     border-bottom: 1px solid var(--border);
     cursor: pointer;
   }
+  /* Anchors the print-type strip to the bottom-left of the card's name */
+  .rc-name-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  /* Only indent where a triangle actually sits, so regular prints stay flush */
+  .rc-name-wrap.has-print { padding-left: 15px; }
   .rc-row:last-child { border-bottom: none; }
   .rc-row.is-ok   { background: color-mix(in srgb, var(--ok-bg) 32%, transparent); }
   .rc-row.is-warn { background: color-mix(in srgb, var(--warn-bg) 32%, transparent); }
   .rc-row input[type="checkbox"] { flex-shrink: 0; width: 19px; height: 19px; }
-  .rc-label { flex: 1; min-width: 0; font-size: 12.5px; word-break: break-word; }
+  .rc-label { position: relative; z-index: 1; display: block; font-size: 12.5px; word-break: break-word; }
   .rc-label a { color: var(--accent); text-decoration: none; }
 
   /* Tap-to-preview button — the touch equivalent of the desktop hover preview.
-     Only rendered for matches that carry a Google Photos link. */
+     Only rendered for matches that carry a Google Photos link. With the
+     images toggle on, this same slot fills with the actual card thumbnail. */
   .rc-peek {
     width: 34px; height: 34px;
     flex-shrink: 0;
@@ -1112,10 +1134,22 @@ input[type="checkbox"] {
     border-radius: var(--r-sm);
     background: var(--surface-3);
     color: var(--text-muted);
-    transition: background 0.16s var(--ease), color 0.16s var(--ease);
+    overflow: hidden;
+    transition: background 0.16s var(--ease), color 0.16s var(--ease),
+                width 0.2s var(--ease), height 0.2s var(--ease);
   }
   .rc-peek:active { background: var(--accent); color: var(--accent-ink); }
   .rc-peek svg { width: 16px; height: 16px; }
+
+  .rc-peek.has-img { width: 46px; height: 64px; background: var(--surface-inset); padding: 0; }
+  .rc-peek.has-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rc-peek.is-loading {
+    width: 46px; height: 64px;
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite linear;
+  }
+  .rc-peek.is-loading svg { display: none; }
   .rc-empty { padding: 11px 12px; font-size: 12.5px; color: var(--text-faint); font-style: italic; }
 }
 
@@ -1709,6 +1743,16 @@ code {
           <button data-filter="similar" aria-pressed="false" onclick="filterResults('similar')">Partial</button>
           <button data-filter="none"    aria-pressed="false" onclick="filterResults('none')">Not found</button>
         </div>
+        <span class="toolrow-divider" id="images-divider"></span>
+        <button class="btn btn-ghost btn-sm" id="btn-images" aria-pressed="false"
+                onclick="toggleImages()" title="Load the card image for every match that has one">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="1.6" y="3" width="12.8" height="10" rx="1.8" stroke="currentColor" stroke-width="1.4"/>
+            <circle cx="5.9" cy="6.6" r="1.3" fill="currentColor"/>
+            <path d="M2.4 11.4l3.4-3 2.5 2.2 2.3-2 3 2.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span id="btn-images-label">Show images</span>
+        </button>
         <span class="toolrow-divider"></span>
         <span id="auto-pick-btns" style="display:flex;gap:7px;">
           <button class="btn btn-ghost btn-sm" onclick="autoPick('random')"  title="Picks one random match per card">🎲 Random</button>
@@ -2008,12 +2052,18 @@ code {
 
       <div class="help-section">
         <div class="help-heading">✦ Print types (MTG)</div>
-        <p class="help-text">Each inventory copy is categorised by print type, shown as a corner triangle on the result:</p>
+        <p class="help-text">Each inventory copy is categorised by print type, shown as a corner triangle tucked under the card's name:</p>
         <div style="display:flex;flex-direction:column;gap:9px;margin-top:6px;">
-          <div class="help-row"><span style="display:inline-block;width:14px;height:14px;background:var(--border-strong);clip-path:polygon(0 100%,100% 100%,100% 0);flex-shrink:0;margin-top:3px;"></span><span><strong>No triangle</strong> — standard non-foil print.</span></div>
-          <div class="help-row"><span style="display:inline-block;width:14px;height:14px;background:linear-gradient(135deg,#a78bfa,#818cf8);clip-path:polygon(0 100%,100% 100%,100% 0);flex-shrink:0;margin-top:3px;"></span><span><strong>Purple triangle</strong> — hologram print (columns C &amp; D).</span></div>
-          <div class="help-row"><span style="display:inline-block;width:14px;height:14px;background:linear-gradient(135deg,#9090ff,#ff90c8,#70eebb);clip-path:polygon(0 100%,100% 100%,100% 0);flex-shrink:0;margin-top:3px;"></span><span><strong>Rainbow triangle</strong> — foil print (columns E &amp; F).</span></div>
+          <div class="help-row"><span style="display:inline-block;width:15px;height:15px;flex-shrink:0;margin-top:3px;"></span><span><strong>No triangle</strong> — standard regular print.</span></div>
+          <div class="help-row"><span style="display:inline-block;width:15px;height:15px;background:var(--silver);clip-path:polygon(0 100%,100% 100%,0 0);flex-shrink:0;margin-top:3px;"></span><span><strong>Silver triangle</strong> — hologram print (columns C &amp; D).</span></div>
+          <div class="help-row"><span style="display:inline-block;width:15px;height:15px;background:var(--gold);clip-path:polygon(0 100%,100% 100%,0 0);flex-shrink:0;margin-top:3px;"></span><span><strong>Gold triangle</strong> — foil print (columns E &amp; F).</span></div>
         </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">🖼 Card images</div>
+        <p class="help-text">On a phone, <strong>Show images</strong> in the results toolbar loads the actual card photo for every match the inventory has one for, filling the thumbnail slot on each row. Tap any thumbnail to see it full size. The setting is remembered between sessions.</p>
+        <p class="help-text">On a larger screen, hover any match instead — the preview follows your cursor.</p>
       </div>
 
       <div class="help-section">
@@ -2358,6 +2408,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   /* Tap anywhere on the preview overlay to dismiss it */
   document.getElementById('peek-overlay').addEventListener('click', closePeek);
+
+  syncImagesButton();
 
   /* ── Click the backdrop to dismiss a modal ── */
   document.querySelectorAll('.modal-overlay[data-dismiss]').forEach(overlay => {
@@ -2813,8 +2865,7 @@ function renderResults(filter) {
           : '';
         cardHtml += `<div class="rc-row ${isExact ? 'is-ok' : 'is-warn'}">
             <input type="checkbox" ${checked} aria-label="Select ${esc(match.value)}" onchange="toggleCheck(${ri},${globalIdx},this)">
-            ${badge}
-            <span class="rc-label">${label}</span>
+            <span class="rc-name-wrap${badge ? ' has-print' : ''}">${badge}<span class="rc-label">${label}</span></span>
             ${peek}
           </div>`;
       });
@@ -2825,6 +2876,8 @@ function renderResults(filter) {
   cardWrap.innerHTML = cardHtml || emptyBlock();
 
   attachHoverPreviews();
+  _imageRun++;              // invalidate any pass targeting the old DOM
+  if (imagesOn) loadRowImages();
 }
 
 function emptyRow() {
@@ -3289,6 +3342,92 @@ function attachHoverPreviews() {
     a.addEventListener('mouseenter', e => showSheetUrlPopup(e, sheetUrl));
     a.addEventListener('mouseleave', hideCardPopup);
   });
+}
+
+/* ── Bulk image loading ────────────────────────────────────────────────────
+   The toggle fills every preview slot on the page with the real card image.
+   Resolution goes through the same cached /api/gphoto helper as the preview,
+   capped at 4 concurrent requests so a big result set doesn't stampede the
+   function. Already-resolved URLs come straight from cache and cost nothing.
+   ───────────────────────────────────────────────────────────────────────── */
+const IMAGES_KEY = 'oracle_images';
+let imagesOn = localStorage.getItem(IMAGES_KEY) === '1';
+let _imageRun = 0;
+
+function syncImagesButton() {
+  const btn = document.getElementById('btn-images');
+  if (!btn) return;
+  btn.setAttribute('aria-pressed', String(imagesOn));
+  document.getElementById('btn-images-label').textContent = imagesOn ? 'Hide images' : 'Show images';
+}
+
+function toggleImages() {
+  imagesOn = !imagesOn;
+  localStorage.setItem(IMAGES_KEY, imagesOn ? '1' : '0');
+  syncImagesButton();
+  if (imagesOn) {
+    loadRowImages();
+  } else {
+    _imageRun++;   // cancels any in-flight pass
+    document.querySelectorAll('.rc-peek.has-img, .rc-peek.is-loading').forEach(resetPeekSlot);
+    setStatus('Card images hidden.', 'info', 1800);
+  }
+}
+
+function resetPeekSlot(el) {
+  el.classList.remove('has-img', 'is-loading');
+  delete el.dataset.loaded;
+  const img = el.querySelector('img');
+  if (img) img.remove();
+  const svg = el.querySelector('svg');
+  if (svg) svg.style.display = '';
+}
+
+async function loadRowImages() {
+  if (!imagesOn) return;
+  const run = ++_imageRun;
+
+  const slots = [...document.querySelectorAll('.rc-peek[data-peek]')]
+    .filter(el => !el.dataset.loaded);
+  if (!slots.length) return;
+
+  let done = 0, failed = 0;
+  const queue = slots.slice();
+
+  const worker = async () => {
+    while (queue.length) {
+      if (run !== _imageRun) return;          // toggled off or re-rendered
+      const el = queue.shift();
+      el.dataset.loaded = '1';
+      el.classList.add('is-loading');
+
+      const resolved = await resolveGphotoUrl(el.dataset.peek);
+      if (run !== _imageRun) return;
+
+      el.classList.remove('is-loading');
+      if (resolved) {
+        const img = new Image();
+        img.alt = '';
+        img.loading = 'lazy';
+        img.onerror = () => { resetPeekSlot(el); failed++; };
+        img.src = resolved;
+        const svg = el.querySelector('svg');
+        if (svg) svg.style.display = 'none';
+        el.appendChild(img);
+        el.classList.add('has-img');
+        done++;
+      } else {
+        failed++;
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: 4 }, worker));
+  if (run !== _imageRun) return;
+
+  if (done)        setStatus(`Loaded ${done} card image${done !== 1 ? 's' : ''}${failed ? ` · ${failed} unavailable` : ''}.`, 'success', 2600);
+  else if (failed) setStatus('No card images could be loaded for these matches.', 'error');
+  else             setStatus('None of these matches have a card image in the sheet.', 'info', 2600);
 }
 
 /* ── Tap-to-preview (touch) ─────────────────────────────────────────────── */
