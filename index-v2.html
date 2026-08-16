@@ -1,0 +1,3312 @@
+<!DOCTYPE html>
+<html lang="en" data-game="mtg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="The Oracle — match your deck list against a live singles inventory across MTG, Pokémon, Yu-Gi-Oh! and One Piece.">
+<meta name="theme-color" content="#12101c">
+<title>The Oracle</title>
+
+<style>
+/* ==========================================================================
+   THE ORACLE v2 — DESIGN TOKENS
+   Two independent axes, layered:
+     [data-game]  → brand accent + banner art   (mtg / pkm / ygo / op)
+     [data-theme] → light or dark surfaces      (light / dark)
+   Any game works in any theme. Nothing below hard-codes a surface colour.
+   ========================================================================== */
+
+/* ── Game accents ───────────────────────────────────────────────────────── */
+html[data-game="mtg"] {
+  --accent:          #7c3aed;
+  --accent-strong:   #6d28d9;
+  --accent-light:    #a78bfa;
+  --accent-ink:      #ffffff;
+  --accent-wash:     rgba(124, 58, 237, 0.10);
+  --accent-line:     rgba(124, 58, 237, 0.28);
+  --accent-glow:     rgba(124, 58, 237, 0.35);
+  --banner-img:      url('https://d3.harvard.edu/platform-rctom/wp-content/uploads/sites/4/2016/11/mtg1-900x200.png');
+  --game-name:       "Magic: The Gathering";
+}
+html[data-game="pkm"] {
+  --accent:          #e11d48;
+  --accent-strong:   #be123c;
+  --accent-light:    #fb7185;
+  --accent-ink:      #ffffff;
+  --accent-wash:     rgba(225, 29, 72, 0.10);
+  --accent-line:     rgba(225, 29, 72, 0.28);
+  --accent-glow:     rgba(225, 29, 72, 0.35);
+  --banner-img:      url('http://www.sportscardworld.com.au/wp-content/uploads/2023/07/68747470733a2f2f6372797374616c2d63646e322e6372797374616c636f6d6d657263652e636f6d2f70686f746f732f363333303536352f73706c61736842616e6e65725f706f6b656d6f6e2e6a7067.jpg');
+  --game-name:       "Pokémon";
+}
+html[data-game="ygo"] {
+  --accent:          #b45309;
+  --accent-strong:   #92400e;
+  --accent-light:    #fbbf24;
+  --accent-ink:      #ffffff;
+  --accent-wash:     rgba(180, 83, 9, 0.10);
+  --accent-line:     rgba(180, 83, 9, 0.28);
+  --accent-glow:     rgba(251, 191, 36, 0.35);
+  --banner-img:      url('https://aura-print.com/media/amasty/blog/cache/A/P/1920/350/AP-blog-header-Most-Valuable-Yugioh-Card.jpg');
+  --game-name:       "Yu-Gi-Oh!";
+}
+html[data-game="op"] {
+  --accent:          #0891b2;
+  --accent-strong:   #0e7490;
+  --accent-light:    #67e8f9;
+  --accent-ink:      #ffffff;
+  --accent-wash:     rgba(8, 145, 178, 0.10);
+  --accent-line:     rgba(8, 145, 178, 0.28);
+  --accent-glow:     rgba(8, 145, 178, 0.35);
+  --banner-img:      url('https://www.primegame.it/images/testate/onepiece_testata_gametrade.jpg');
+  --game-name:       "One Piece";
+}
+/* Gold reads poorly as a solid fill on light surfaces — nudge it darker there,
+   and let it shine in dark mode where it belongs. */
+html[data-game="ygo"][data-theme="dark"] {
+  --accent:          #d97706;
+  --accent-strong:   #b45309;
+}
+
+/* ── Light surfaces (default) ───────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  --bg:              #f4f5f9;
+  --bg-tint:         #eceef6;
+  --surface:         #ffffff;
+  --surface-2:       #f7f8fc;
+  --surface-3:       #eef0f7;
+  --surface-inset:   #f9fafc;
+
+  --border:          #e3e6ef;
+  --border-strong:   #cfd4e3;
+
+  --text:            #16181f;
+  --text-muted:      #5a6072;
+  --text-faint:      #8b91a4;
+
+  --chrome-bg:       #14121f;
+  --chrome-text:     #f2f0f7;
+  --chrome-muted:    rgba(255,255,255,0.62);
+  --chrome-line:     rgba(255,255,255,0.10);
+  --chrome-hover:    rgba(255,255,255,0.09);
+
+  --ok-bg:      #dcf5e4;  --ok-fg:      #15653a;  --ok-line: #a6e0bd;
+  --warn-bg:    #fdf0cd;  --warn-fg:    #7a5406;  --warn-line: #f0d693;
+  --miss-bg:    #fde0e2;  --miss-fg:    #9d1d29;  --miss-line: #f4b8bd;
+  --info-bg:    #e2ecfd;  --info-fg:    #1c4ba6;
+  --violet-bg:  #eae5fb;  --violet-fg:  #4c2497;
+
+  --shadow-sm:  0 1px 2px rgba(16,18,32,0.05), 0 1px 3px rgba(16,18,32,0.05);
+  --shadow-md:  0 2px 4px rgba(16,18,32,0.05), 0 6px 16px rgba(16,18,32,0.07);
+  --shadow-lg:  0 8px 24px rgba(16,18,32,0.10), 0 24px 56px rgba(16,18,32,0.13);
+  --shadow-pop: 0 12px 32px rgba(16,18,32,0.16), 0 2px 8px rgba(16,18,32,0.10);
+
+  --banner-veil-a: rgba(14,12,22,0.82);
+  --banner-veil-b: rgba(14,12,22,0.40);
+
+  /* Scale */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 20px; --r-pill: 999px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* ── Dark surfaces ──────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg:              #0c0b12;
+  --bg-tint:         #100e18;
+  --surface:         #17151f;
+  --surface-2:       #1d1b27;
+  --surface-3:       #242231;
+  --surface-inset:   #131119;
+
+  --border:          #2a2836;
+  --border-strong:   #3a3749;
+
+  --text:            #ecebf2;
+  --text-muted:      #a3a0b4;
+  --text-faint:      #74718a;
+
+  --chrome-bg:       #100e18;
+  --chrome-text:     #ecebf2;
+  --chrome-muted:    rgba(255,255,255,0.55);
+  --chrome-line:     rgba(255,255,255,0.07);
+  --chrome-hover:    rgba(255,255,255,0.07);
+
+  --ok-bg:      #0f3524;  --ok-fg:      #6ee7a8;  --ok-line: #1c5a3d;
+  --warn-bg:    #3a2c07;  --warn-fg:    #fcd34d;  --warn-line: #5c4610;
+  --miss-bg:    #3d1418;  --miss-fg:    #fca5a5;  --miss-line: #62222a;
+  --info-bg:    #12284d;  --info-fg:    #93c0f9;
+  --violet-bg:  #241a44;  --violet-fg:  #c4b5fd;
+
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.40);
+  --shadow-md:  0 2px 6px rgba(0,0,0,0.42), 0 8px 22px rgba(0,0,0,0.36);
+  --shadow-lg:  0 10px 30px rgba(0,0,0,0.55), 0 28px 64px rgba(0,0,0,0.42);
+  --shadow-pop: 0 14px 38px rgba(0,0,0,0.62), 0 2px 10px rgba(0,0,0,0.45);
+
+  --banner-veil-a: rgba(8,7,13,0.84);
+  --banner-veil-b: rgba(8,7,13,0.44);
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+               system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Room for the fixed action bar + iPhone home indicator */
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  transition: background-color 0.35s var(--ease), color 0.35s var(--ease);
+}
+
+h1, h2, h3, h4 { font-weight: 650; letter-spacing: -0.011em; line-height: 1.25; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: none; cursor: pointer; }
+
+a { color: var(--accent); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+/* Chrome (dark bar) needs a light ring to be visible */
+.appbar :focus-visible, .actionbar :focus-visible { outline-color: #ffffff; }
+
+.hidden { display: none !important; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   APP BAR — logo, TCG picker, theme toggle, auth
+   ========================================================================== */
+.appbar {
+  background: var(--chrome-bg);
+  color: var(--chrome-text);
+  border-bottom: 1px solid var(--chrome-line);
+  padding: 10px max(16px, env(safe-area-inset-left)) 10px max(16px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  transition: background-color 0.35s var(--ease);
+}
+.appbar-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.appbar-brand svg { flex-shrink: 0; }
+.appbar-wordmark { min-width: 0; }
+.appbar-wordmark h1 {
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.appbar-wordmark p {
+  font-size: 10.5px;
+  color: var(--chrome-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.appbar-spacer { flex: 1; min-width: 0; }
+.appbar-tools { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ── TCG picker (replaces the v1 button row) ────────────────────────────── */
+.tcg { position: relative; flex-shrink: 0; }
+.tcg-trigger {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 38px;
+  padding: 0 11px;
+  border-radius: var(--r-md);
+  background: var(--chrome-hover);
+  border: 1px solid var(--chrome-line);
+  color: var(--chrome-text);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
+  max-width: 62vw;
+}
+.tcg-trigger:hover { background: rgba(255,255,255,0.14); }
+.tcg-trigger[aria-expanded="true"] {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+.tcg-ico { width: 20px; height: 20px; display: grid; place-items: center; flex-shrink: 0; }
+.tcg-ico svg { width: 100%; height: 100%; display: block; }
+.tcg-trigger-label {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tcg-trigger-short { display: none; }
+.tcg-caret {
+  width: 11px; height: 11px; flex-shrink: 0; opacity: 0.7;
+  transition: transform 0.22s var(--ease);
+}
+.tcg-trigger[aria-expanded="true"] .tcg-caret { transform: rotate(180deg); opacity: 1; }
+
+.tcg-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  padding: 6px;
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top left;
+  pointer-events: none;
+  transition: opacity 0.16s var(--ease), transform 0.18s var(--ease-out);
+}
+.tcg-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+.tcg-opt {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 10px;
+  min-height: 46px;               /* comfortable touch target */
+  border-radius: var(--r-md);
+  color: var(--text);
+  text-align: left;
+  transition: background 0.14s var(--ease);
+}
+.tcg-opt:hover, .tcg-opt:focus-visible { background: var(--surface-3); }
+.tcg-opt[aria-selected="true"] { background: var(--accent-wash); }
+.tcg-opt-body { flex: 1; min-width: 0; }
+.tcg-opt-name { display: block; font-size: 14px; font-weight: 600; }
+.tcg-opt-meta { display: block; font-size: 11.5px; color: var(--text-faint); margin-top: 1px; }
+.tcg-opt-check { width: 16px; height: 16px; flex-shrink: 0; color: var(--accent); opacity: 0; }
+.tcg-opt[aria-selected="true"] .tcg-opt-check { opacity: 1; }
+/* Each option keeps its own game's icon colour cue */
+.tcg-opt .tcg-ico { width: 26px; height: 26px; }
+
+.tcg-scrim { display: none; }
+
+/* Mobile: the menu becomes a bottom sheet — far easier to hit one-handed */
+@media (max-width: 560px) {
+  .tcg-menu {
+    position: fixed;
+    top: auto; left: 0; right: 0;
+    bottom: 0;
+    min-width: 0;
+    width: 100%;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    transform-origin: bottom center;
+    z-index: 210;
+  }
+  .tcg-menu.open { transform: none; }
+  .tcg-menu::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    border-radius: var(--r-pill);
+    background: var(--border-strong);
+    margin: 6px auto 10px;
+  }
+  .tcg-opt { min-height: 52px; }
+  .tcg-scrim {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 205;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s var(--ease);
+  }
+  .tcg-scrim.open { opacity: 1; pointer-events: auto; }
+}
+
+/* ── Theme toggle ───────────────────────────────────────────────────────── */
+.theme-toggle {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: var(--r-md);
+  background: var(--chrome-hover);
+  border: 1px solid var(--chrome-line);
+  color: var(--chrome-text);
+  transition: background 0.18s var(--ease);
+  flex-shrink: 0;
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.14); }
+.theme-toggle svg { width: 17px; height: 17px; }
+.theme-toggle .icon-sun  { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun  { display: block; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+/* ── Auth ───────────────────────────────────────────────────────────────── */
+.btn-signin {
+  display: flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 13px;
+  background: #ffffff; color: #1f2430;
+  border-radius: var(--r-md);
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap;
+  transition: transform 0.12s var(--ease), box-shadow 0.18s var(--ease);
+  box-shadow: var(--shadow-sm);
+}
+.btn-signin:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-signin:active { transform: none; }
+.btn-signin svg { flex-shrink: 0; }
+
+.auth-user { display: flex; align-items: center; gap: 8px; }
+.auth-user img {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--accent);
+  object-fit: cover;
+}
+.auth-name {
+  font-size: 13px; color: var(--chrome-text); font-weight: 550;
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.btn-signout {
+  background: var(--chrome-hover);
+  border: 1px solid var(--chrome-line);
+  color: var(--chrome-muted);
+  border-radius: var(--r-sm);
+  padding: 5px 10px; font-size: 12px; font-weight: 550;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+.btn-signout:hover { background: rgba(255,255,255,0.16); color: var(--chrome-text); }
+
+@media (max-width: 900px) {
+  .appbar-wordmark p { display: none; }
+  .auth-name { display: none; }
+}
+@media (max-width: 700px) {
+  .appbar { gap: 10px; padding-top: 8px; padding-bottom: 8px; }
+  .appbar-wordmark h1 { font-size: 15px; }
+  .btn-signin span { display: none; }
+  .btn-signin { padding: 0 11px; }
+  /* Long game names don't fit — fall back to the short code, not to nothing */
+  .tcg-trigger-label { display: none; }
+  .tcg-trigger-short { display: inline; }
+  .tcg-trigger { padding: 0 9px; gap: 6px; }
+}
+@media (max-width: 400px) {
+  .appbar-brand svg.logo { display: none; }
+}
+
+/* ==========================================================================
+   LAYOUT
+   ========================================================================== */
+.container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 16px max(14px, env(safe-area-inset-left)) 28px max(14px, env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Saved lists bar — the "top toolbar" ────────────────────────────────── */
+.savedbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 11px 14px;
+  box-shadow: var(--shadow-sm);
+}
+.savedbar-label {
+  font-size: 12px; font-weight: 650; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 6px;
+}
+.savedbar select {
+  flex: 1 1 190px;
+  min-width: 0;
+  height: 38px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0 32px 0 11px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 8l3-3.5' fill='none' stroke='%238b91a4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 12px;
+  transition: border-color 0.18s var(--ease);
+}
+.savedbar select:hover { border-color: var(--border-strong); }
+.savedbar-note { font-size: 12px; color: var(--text-faint); }
+
+@media (max-width: 620px) {
+  .savedbar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .savedbar select { flex: 1 1 auto; width: 100%; }
+  .savedbar-actions { display: flex; gap: 8px; }
+  .savedbar-actions .btn { flex: 1; justify-content: center; }
+}
+
+/* ==========================================================================
+   HERO BANNER — sits between the top toolbar and the content
+   (v1 had this artwork spanning the very top of the page)
+   ========================================================================== */
+.hero {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  min-height: 128px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--chrome-bg);
+  box-shadow: var(--shadow-md);
+  isolation: isolate;
+}
+.hero-art {
+  position: absolute;
+  inset: 0;
+  background-image: var(--banner-img);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  transform: scale(1.03);
+  transition: opacity 0.5s var(--ease), transform 6s var(--ease);
+}
+.hero:hover .hero-art { transform: scale(1.06); }
+.hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(100deg, var(--banner-veil-a) 0%, var(--banner-veil-b) 62%, transparent 100%),
+    linear-gradient(to top, var(--banner-veil-a) 0%, transparent 70%);
+}
+/* A thin accent seam ties the banner to the active game */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  z-index: 3;
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+}
+.hero-eyebrow {
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-light);
+}
+.hero-title {
+  font-size: 25px;
+  font-weight: 680;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.5);
+}
+.hero-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 550;
+  color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.13);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: var(--r-pill);
+  padding: 4px 11px;
+}
+.hero-chip .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-faint);
+  flex-shrink: 0;
+}
+.hero-chip[data-state="loading"] .dot { background: #fbbf24; animation: pulseDot 1.1s ease-in-out infinite; }
+.hero-chip[data-state="ready"]   .dot { background: #34d399; }
+.hero-chip[data-state="error"]   .dot { background: #f87171; }
+.hero-chip[data-state="error"] {
+  background: rgba(248,113,113,0.18);
+  border-color: rgba(248,113,113,0.42);
+  color: #fecaca;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.82); }
+}
+
+@media (max-width: 620px) {
+  .hero { min-height: 104px; }
+  .hero-content { padding: 14px 15px; gap: 5px; }
+  .hero-title { font-size: 20px; }
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 15px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: transform 0.12s var(--ease), box-shadow 0.18s var(--ease),
+              background 0.18s var(--ease), border-color 0.18s var(--ease), opacity 0.18s var(--ease);
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn svg { flex-shrink: 0; }
+
+.btn-accent  { background: var(--accent); color: var(--accent-ink); border-color: transparent; box-shadow: 0 1px 3px var(--accent-glow); }
+.btn-accent:hover:not(:disabled) { background: var(--accent-strong); box-shadow: 0 4px 14px var(--accent-glow); }
+.btn-solid   { background: #16a34a; color: #fff; border-color: transparent; }
+.btn-solid:hover:not(:disabled) { background: #15803d; }
+.btn-ghost   { background: transparent; border-color: var(--border); color: var(--text-muted); }
+.btn-ghost:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
+.btn-danger  { background: transparent; border-color: var(--miss-line); color: var(--miss-fg); }
+.btn-danger:hover:not(:disabled) { background: var(--miss-bg); }
+.btn-sm { height: 32px; padding: 0 11px; font-size: 12px; border-radius: var(--r-sm); }
+
+/* ==========================================================================
+   PANELS
+   ========================================================================== */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.panel:focus-within { box-shadow: var(--shadow-md); }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  transition: background 0.18s var(--ease);
+}
+.panel-header:hover { background: var(--surface-3); }
+.panel-header[aria-expanded="false"] { border-bottom-color: transparent; }
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  min-width: 0;
+}
+.panel-title .panel-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.panel-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.panel-chevron {
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--accent-wash);
+  color: var(--accent);
+  flex-shrink: 0;
+  transition: transform 0.25s var(--ease), background 0.18s var(--ease);
+}
+.panel-chevron svg { width: 11px; height: 11px; }
+.panel-header[aria-expanded="false"] .panel-chevron { transform: rotate(-90deg); }
+
+.panel-body { padding: 16px; }
+.panel-body[hidden] { display: none; }
+
+/* ==========================================================================
+   INPUT PANEL
+   ========================================================================== */
+.input-hint { font-size: 12.5px; color: var(--text-muted); margin-bottom: 10px; }
+
+.bookmarklet-row {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  margin-bottom: 11px;
+  padding: 9px 11px;
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-md);
+}
+.bookmarklet-row span.lbl { font-size: 11.5px; color: var(--text-faint); }
+.bookmarklet {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: var(--r-sm);
+  padding: 6px 12px;
+  font-size: 12px; font-weight: 600;
+  text-decoration: none;
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.12s var(--ease), box-shadow 0.18s var(--ease);
+}
+.bookmarklet:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+.bookmarklet:active { cursor: grabbing; }
+
+textarea#card-input {
+  width: 100%;
+  min-height: 168px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+  resize: vertical;
+  transition: border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+textarea#card-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
+textarea::placeholder { color: var(--text-faint); }
+
+.input-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+  margin-top: 9px;
+}
+.input-count { font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.kbd-hint { font-size: 11.5px; color: var(--text-faint); display: flex; align-items: center; gap: 5px; }
+kbd {
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   PROGRESS
+   ========================================================================== */
+.progress { display: none; }
+.progress.visible { display: block; }
+.progress-track {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  transition: width 0.25s var(--ease);
+}
+.progress-label { font-size: 11.5px; color: var(--text-faint); margin-top: 6px; }
+
+/* ==========================================================================
+   SUMMARY STAT TILES
+   ========================================================================== */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.stat {
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.stat .num {
+  font-size: 26px; font-weight: 680; line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.stat .lbl {
+  font-size: 10.5px; font-weight: 650;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  opacity: 0.85;
+}
+.stat-ok    { background: var(--ok-bg);     color: var(--ok-fg);     border-color: var(--ok-line); }
+.stat-warn  { background: var(--warn-bg);   color: var(--warn-fg);   border-color: var(--warn-line); }
+.stat-miss  { background: var(--miss-bg);   color: var(--miss-fg);   border-color: var(--miss-line); }
+.stat-info  { background: var(--info-bg);   color: var(--info-fg);   border-color: transparent; }
+.stat-violet{ background: var(--violet-bg); color: var(--violet-fg); border-color: transparent; }
+
+/* ==========================================================================
+   FILTER / TOOL ROW
+   ========================================================================== */
+.toolrow {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  margin-bottom: 13px;
+}
+.seg {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 3px;
+  gap: 2px;
+}
+.seg button {
+  height: 28px;
+  padding: 0 11px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+  white-space: nowrap;
+}
+.seg button:hover { color: var(--text); background: var(--surface-3); }
+.seg button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.seg button[aria-pressed="true"][data-filter="exact"]   { color: var(--ok-fg); }
+.seg button[aria-pressed="true"][data-filter="similar"] { color: var(--warn-fg); }
+.seg button[aria-pressed="true"][data-filter="none"]    { color: var(--miss-fg); }
+
+.toolrow-divider {
+  width: 1px; align-self: stretch; background: var(--border); margin: 2px 3px;
+}
+
+@media (max-width: 620px) {
+  .toolrow { gap: 6px; }
+  .seg { width: 100%; }
+  .seg button { flex: 1; padding: 0 6px; }
+  #auto-pick-btns { display: flex; gap: 6px; width: 100%; }
+  #auto-pick-btns .btn { flex: 1; padding: 0 8px; }
+  .toolrow-divider { display: none; }
+}
+
+/* ==========================================================================
+   RESULTS TABLE (desktop)
+   ========================================================================== */
+.results-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--r-md); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed;
+}
+thead th {
+  background: var(--surface-3);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 9px 11px;
+  text-align: left;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--border);
+}
+tbody td {
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--surface-2); }
+
+.cell-name { font-weight: 600; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.pill-ok   { background: var(--ok-bg);   color: var(--ok-fg); }
+.pill-warn { background: var(--warn-bg); color: var(--warn-fg); }
+.pill-miss { background: var(--miss-bg); color: var(--miss-fg); }
+
+.cell-ok   { background: color-mix(in srgb, var(--ok-bg) 45%, transparent); }
+.cell-warn { background: color-mix(in srgb, var(--warn-bg) 45%, transparent); }
+
+.sel-col { width: 38px; text-align: center; text-overflow: clip; }
+
+input[type="checkbox"] {
+  width: 17px; height: 17px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  vertical-align: middle;
+}
+
+.match {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  padding: 3px 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+.match-text {
+  position: relative; z-index: 1;
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.match-text a { color: var(--accent); text-decoration: none; }
+.match-text a:hover { text-decoration: underline; }
+
+/* Print-type corner strips */
+.match-strip {
+  position: absolute;
+  bottom: 0; left: 0;
+  pointer-events: none;
+  z-index: 0;
+  clip-path: polygon(0 100%, 100% 100%, 0 0);
+}
+.col-plain .match-strip { display: none; }
+/* Keep the name clear of the corner triangle */
+.col-holo .match-text, .col-foil .match-text { padding-left: 13px; }
+.col-holo .match-strip {
+  width: 22px; height: 22px;
+  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 40%, #c4b5fd 60%, #a78bfa 100%);
+  animation: holoPulse 3.5s ease-in-out infinite;
+  transform-origin: bottom left;
+}
+@keyframes holoPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.16); }
+}
+.col-foil .match-strip {
+  width: 22px; height: 22px;
+  background: linear-gradient(135deg,
+    #9090ff 0%, #d0d0ff 12%, #70c8ff 22%, #c0c0ff 32%,
+    #ff90c8 42%, #d0d0ff 52%, #70eebb 62%,
+    #c0c0ff 72%, #a090ff 82%, #d8d8ff 90%, #9090ff 100%);
+  background-size: 300% 300%;
+  animation: foilShimmer 4.5s ease-in-out infinite;
+  filter: brightness(0.97) contrast(1.2) saturate(1.5);
+}
+@keyframes foilShimmer {
+  0%   { background-position: 0% 0%;     opacity: 0.8; }
+  25%  { background-position: 100% 0%;   opacity: 1; }
+  50%  { background-position: 100% 100%; opacity: 0.85; }
+  75%  { background-position: 0% 100%;   opacity: 1; }
+  100% { background-position: 0% 0%;     opacity: 0.8; }
+}
+
+/* ==========================================================================
+   RESULTS CARDS (mobile)
+   ========================================================================== */
+.result-cards { display: none; }
+
+@media (max-width: 760px) {
+  #results-table { display: none; }
+  .result-cards  { display: flex; flex-direction: column; gap: 9px; }
+
+  .rc {
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .rc-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 9px;
+    padding: 9px 12px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .rc-name {
+    font-size: 13.5px; font-weight: 650;
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rc-body { padding: 4px 6px; }
+  .rc-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 8px;
+    min-height: 44px;                 /* touch target */
+    border-radius: var(--r-sm);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .rc-row:last-child { border-bottom: none; }
+  .rc-row.is-ok   { background: color-mix(in srgb, var(--ok-bg) 32%, transparent); }
+  .rc-row.is-warn { background: color-mix(in srgb, var(--warn-bg) 32%, transparent); }
+  .rc-row input[type="checkbox"] { flex-shrink: 0; width: 19px; height: 19px; }
+  .rc-label { flex: 1; min-width: 0; font-size: 12.5px; word-break: break-word; }
+  .rc-label a { color: var(--accent); text-decoration: none; }
+  .rc-empty { padding: 11px 12px; font-size: 12.5px; color: var(--text-faint); font-style: italic; }
+}
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 34px 20px;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+.empty svg { opacity: 0.4; margin-bottom: 10px; }
+
+/* ==========================================================================
+   GENERATED LISTS
+   ========================================================================== */
+.lists-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 860px) { .lists-grid { grid-template-columns: 1fr; } }
+
+.listbox {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+}
+.listbox-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.listbox-title {
+  font-size: 12.5px; font-weight: 650;
+  display: flex; align-items: center; gap: 8px;
+  min-width: 0;
+}
+.listbox-title .tag {
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 7px; border-radius: 4px; flex-shrink: 0;
+}
+.listbox-title .tag-bl  { background: var(--info-bg);   color: var(--info-fg); }
+.listbox-title .tag-tcg { background: var(--violet-bg); color: var(--violet-fg); }
+.listbox-title .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listbox-body { padding: 10px; }
+
+.list-output {
+  width: 100%;
+  height: 210px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text);
+  resize: vertical;
+}
+.list-output:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
+
+/* ── One-tap copy button ────────────────────────────────────────────────── */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  min-width: 92px;
+  padding: 0 13px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 650;
+  flex-shrink: 0;
+  transition: background 0.18s var(--ease), transform 0.12s var(--ease), box-shadow 0.2s var(--ease);
+}
+.copy-btn:hover { background: var(--accent-strong); transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+.copy-btn:active { transform: none; }
+.copy-btn svg { width: 14px; height: 14px; }
+.copy-btn .ico-check { display: none; }
+.copy-btn.copied { background: #16a34a; box-shadow: 0 4px 14px rgba(22,163,74,0.35); }
+.copy-btn.copied .ico-copy  { display: none; }
+.copy-btn.copied .ico-check { display: block; }
+@keyframes copyPop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+.copy-btn.copied { animation: copyPop 0.32s var(--spring); }
+.copy-hint { font-size: 11px; color: var(--text-faint); margin-top: 7px; }
+
+@media (max-width: 620px) {
+  .listbox-head { flex-wrap: wrap; }
+  .copy-btn { width: 100%; height: 42px; font-size: 13.5px; }
+  .list-output { height: 175px; font-size: 12px; }
+}
+
+/* ==========================================================================
+   FIXED ACTION BAR (bottom)
+   ========================================================================== */
+.actionbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--chrome-bg);
+  border-top: 1px solid var(--chrome-line);
+  box-shadow: 0 -4px 22px rgba(0,0,0,0.28);
+  padding: 10px max(14px, env(safe-area-inset-left))
+           calc(10px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-right));
+  transition: background-color 0.35s var(--ease);
+}
+.actionbar .btn {
+  background: var(--chrome-hover);
+  border-color: var(--chrome-line);
+  color: var(--chrome-text);
+}
+.actionbar .btn:hover:not(:disabled) { background: rgba(255,255,255,0.15); }
+.actionbar .btn-accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+.actionbar .btn-accent:hover:not(:disabled) { background: var(--accent-strong); }
+.actionbar .btn-solid { background: #16a34a; color: #fff; border-color: transparent; }
+.actionbar .btn-solid:hover:not(:disabled) { background: #15803d; }
+.actionbar .btn:disabled { opacity: 0.32; }
+
+.actionbar-credit {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--chrome-muted);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.actionbar-credit strong { color: var(--accent-light); font-weight: 650; }
+.chip-btn {
+  border: 1px solid var(--chrome-line);
+  border-radius: var(--r-pill);
+  color: var(--chrome-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  transition: color 0.16s var(--ease), border-color 0.16s var(--ease), background 0.16s var(--ease);
+}
+.chip-btn:hover { color: var(--chrome-text); border-color: rgba(255,255,255,0.3); background: var(--chrome-hover); }
+
+/* Overflow menu — only used on narrow screens */
+.more-wrap { position: relative; }
+.more-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  min-width: 210px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  transform-origin: bottom right;
+  pointer-events: none;
+  transition: opacity 0.16s var(--ease), transform 0.18s var(--ease-out);
+  z-index: 90;
+}
+.more-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+.more-menu button {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 11px;
+  border-radius: var(--r-md);
+  font-size: 13.5px;
+  font-weight: 550;
+  color: var(--text);
+  text-align: left;
+  transition: background 0.14s var(--ease);
+}
+.more-menu button:hover:not(:disabled) { background: var(--surface-3); }
+.more-menu button:disabled { opacity: 0.4; cursor: not-allowed; }
+.more-menu .sep { height: 1px; background: var(--border); margin: 4px 6px; }
+.more-menu .meta {
+  font-size: 11px; color: var(--text-faint);
+  padding: 6px 11px 4px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+
+/* Desktop shows every action inline; the More button is hidden. */
+.more-wrap { display: none; }
+@media (max-width: 860px) {
+  .actionbar { gap: 7px; }
+  .actionbar .btn-overflowable { display: none; }
+  .actionbar-credit { display: none; }
+  .more-wrap { display: block; margin-left: auto; }
+  .actionbar .btn { flex: 1 1 auto; min-width: 0; }
+  .actionbar .btn span.label { overflow: hidden; text-overflow: ellipsis; }
+  .more-wrap .btn { flex: 0 0 auto; width: 44px; padding: 0; }
+}
+@media (max-width: 380px) {
+  .actionbar .btn { padding: 0 10px; font-size: 12px; }
+}
+
+/* ==========================================================================
+   TOASTS
+   ========================================================================== */
+/* Offset below the sticky app bar so toasts never cover the TCG picker or auth */
+#toast-container {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 66px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  width: 100%;
+  max-width: 520px;
+  padding: 0 12px;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  line-height: 1.45;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(-14px) scale(0.97);
+  transition: opacity 0.24s var(--ease), transform 0.32s var(--spring);
+}
+.toast.in { opacity: 1; transform: none; }
+.toast-icon {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+.toast-msg { flex: 1; min-width: 0; color: var(--text); }
+.toast-msg strong { font-weight: 650; }
+.toast-close {
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 1;
+  padding: 2px 0 2px 6px;
+  flex-shrink: 0;
+  transition: color 0.16s var(--ease);
+}
+.toast-close:hover { color: var(--text); }
+.toast-info    { border-left: 3px solid var(--accent); }
+.toast-info    .toast-icon { background: var(--accent-wash); color: var(--accent); }
+.toast-success { border-left: 3px solid #16a34a; }
+.toast-success .toast-icon { background: var(--ok-bg); color: var(--ok-fg); }
+.toast-error   { border-left: 3px solid #dc2626; }
+.toast-error   .toast-icon { background: var(--miss-bg); color: var(--miss-fg); }
+
+/* ==========================================================================
+   MODALS
+   ========================================================================== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(8,7,14,0.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.modal-overlay.visible { display: flex; opacity: 1; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 22px;
+  width: 100%;
+  max-width: 470px;
+  max-height: min(86vh, 860px);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.28s var(--ease-out);
+}
+.modal-overlay.visible .modal { transform: none; }
+.modal-wide { max-width: 660px; }
+.modal h2 { font-size: 17px; margin-bottom: 7px; }
+.modal > p { font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.55; }
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px;
+}
+.modal-head h2 { margin: 0; }
+.modal-scroll {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.modal-btns {
+  display: flex; gap: 9px; justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.modal-btns-plain { border-top: none; padding-top: 0; }
+.modal input[type="text"] {
+  width: 100%;
+  height: 42px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0 13px;
+  font-size: 14.5px;
+  color: var(--text);
+}
+.modal input[type="text"]:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash);
+}
+.modal-close {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+  font-size: 17px;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+.modal-close:hover { background: var(--surface-3); color: var(--text); }
+
+@media (max-width: 620px) {
+  .modal-btns .btn { flex: 1; }
+}
+
+/* ── Help modal content ─────────────────────────────────────────────────── */
+.help-section { display: flex; flex-direction: column; gap: 7px; }
+.help-heading {
+  font-size: 12.5px; font-weight: 700; color: var(--text);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  display: flex; align-items: center; gap: 7px;
+}
+.help-text { font-size: 13px; color: var(--text-muted); line-height: 1.62; }
+.help-steps { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+.help-step { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+.help-step strong { color: var(--text); font-weight: 620; }
+.step-num {
+  background: var(--accent); color: var(--accent-ink);
+  border-radius: 50%; width: 21px; height: 21px;
+  font-size: 11px; font-weight: 700;
+  display: grid; place-items: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.help-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+.help-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  border-radius: 4px; padding: 3px 7px;
+  white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+}
+.tag-green { background: var(--ok-bg); color: var(--ok-fg); }
+.tag-violet{ background: var(--violet-bg); color: var(--violet-fg); }
+.tag-amber { background: var(--warn-bg); color: var(--warn-fg); }
+.tag-gray  { background: var(--surface-3); color: var(--text-muted); }
+code {
+  background: var(--surface-3);
+  border-radius: 4px;
+  padding: 1.5px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+/* ── Version log ────────────────────────────────────────────────────────── */
+.vlog { display: flex; gap: 12px; padding: 11px 12px; background: var(--surface-2); border-radius: var(--r-md); border-left: 3px solid var(--accent); }
+.vlog-ver { font-size: 12px; font-weight: 700; color: var(--accent); white-space: nowrap; min-width: 34px; padding-top: 1px; }
+.vlog-notes { display: flex; flex-direction: column; gap: 4px; }
+.vlog-notes div { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+
+/* ==========================================================================
+   CARD IMAGE HOVER PREVIEW
+   ========================================================================== */
+.thumb-popup {
+  display: none;
+  position: fixed;
+  z-index: 9000;
+  pointer-events: none;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  width: 224px;
+  height: 204px;
+  background: var(--surface-inset);
+  border: 1px solid var(--accent-line);
+  box-shadow: var(--shadow-lg), 0 0 22px 2px var(--accent-glow);
+}
+.thumb-popup img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.thumb-popup[data-loading] {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     APP BAR — top toolbar (brand · TCG picker · theme · auth)
+     ══════════════════════════════════════════════════════════════════════ -->
+<header class="appbar">
+  <div class="appbar-brand">
+    <svg class="logo" width="34" height="34" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="19" cy="19" r="18" stroke="var(--accent-light)" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.6"/>
+      <path d="M4 19 C8 10, 30 10, 34 19 C30 28, 8 28, 4 19 Z" fill="#1a1a3e" stroke="var(--accent-light)" stroke-width="1.5"/>
+      <circle cx="19" cy="19" r="6.5" fill="#2e1065" stroke="var(--accent)" stroke-width="1.2"/>
+      <circle cx="19" cy="19" r="3.5" fill="#0f0720"/>
+      <circle cx="21.5" cy="16.5" r="1.3" fill="white" opacity="0.7"/>
+      <circle cx="19" cy="19" r="5" fill="none" stroke="var(--accent-light)" stroke-width="0.6" opacity="0.5"/>
+      <line x1="14" y1="11.5" x2="13.2" y2="9.5" stroke="var(--accent-light)" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+      <line x1="19" y1="10.2" x2="19" y2="8"    stroke="var(--accent-light)" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+      <line x1="24" y1="11.5" x2="24.8" y2="9.5" stroke="var(--accent-light)" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+    </svg>
+    <div class="appbar-wordmark">
+      <h1>The Oracle</h1>
+      <p>See all. Miss nothing.</p>
+    </div>
+  </div>
+
+  <!-- TCG picker -->
+  <div class="tcg" id="tcg">
+    <button class="tcg-trigger" id="tcg-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Choose trading card game">
+      <span class="tcg-ico" id="tcg-trigger-ico"></span>
+      <span class="tcg-trigger-label" id="tcg-trigger-label">Magic: The Gathering</span>
+      <span class="tcg-trigger-short" id="tcg-trigger-short">MTG</span>
+      <svg class="tcg-caret" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+        <path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="tcg-menu" id="tcg-menu" role="listbox" aria-label="Trading card game"></div>
+  </div>
+  <div class="tcg-scrim" id="tcg-scrim"></div>
+
+  <div class="appbar-spacer"></div>
+
+  <div class="appbar-tools">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor"/>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.2" fill="currentColor"/>
+        <g stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+          <path d="M12 2.4v2.3M12 19.3v2.3M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.4 12h2.3M19.3 12h2.3M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/>
+        </g>
+      </svg>
+    </button>
+
+    <button class="btn-signin" id="btn-signin" onclick="signIn()">
+      <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span>Sign in</span>
+    </button>
+
+    <div class="auth-user" id="auth-user" style="display:none;">
+      <img id="auth-avatar" src="" alt="">
+      <span class="auth-name" id="auth-name"></span>
+      <button class="btn-signout" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ═══ Saved lists (top toolbar row) ═══ -->
+  <div class="savedbar">
+    <span class="savedbar-label">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2.5 3.2A1.7 1.7 0 0 1 4.2 1.5h5.4l4.4 4.4v6.9a1.7 1.7 0 0 1-1.7 1.7H4.2a1.7 1.7 0 0 1-1.7-1.7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M5.4 1.8v3.6h4.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+      </svg>
+      Saved Lists
+    </span>
+    <select id="saved-lists-dropdown" onchange="onSavedListSelect()" aria-label="Saved lists">
+      <option value="">— select a saved list —</option>
+    </select>
+    <div class="savedbar-actions" style="display:flex;gap:8px;">
+      <button class="btn btn-solid btn-sm" id="btn-save-list" onclick="saveCurrentLists()" disabled style="height:38px;">Save current</button>
+      <button class="btn btn-danger btn-sm" id="btn-delete-list" onclick="deleteSavedList()" disabled style="height:38px;">Delete</button>
+    </div>
+    <span class="savedbar-note" id="auth-note">Sign in to save &amp; load lists</span>
+  </div>
+
+  <!-- ═══ Banner — now between the top toolbar and the content ═══ -->
+  <section class="hero" id="hero" aria-labelledby="hero-title">
+    <div class="hero-art" id="hero-art" aria-hidden="true"></div>
+    <div class="hero-veil" aria-hidden="true"></div>
+    <div class="hero-content">
+      <span class="hero-eyebrow">Now searching</span>
+      <h2 class="hero-title" id="hero-title">Magic: The Gathering</h2>
+      <div class="hero-meta">
+        <span class="hero-chip" id="singles-status" data-state="idle">
+          <span class="dot"></span><span id="singles-status-text">Inventory not loaded</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Progress ═══ -->
+  <div class="progress" id="progress">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label"></div>
+  </div>
+
+  <!-- ═══ Input panel ═══ -->
+  <section class="panel" id="input-panel">
+    <button class="panel-header" id="input-panel-header" aria-expanded="true" aria-controls="input-panel-body" onclick="togglePanel('input-panel')">
+      <span class="panel-title"><span class="panel-dot"></span><span class="panel-title-text">Cards to Search</span></span>
+      <span class="panel-chevron" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    <div class="panel-body" id="input-panel-body">
+      <p class="input-hint" id="input-hint">Paste your deck list below, one card per line.</p>
+
+      <div class="bookmarklet-row">
+        <span class="lbl">Drag to your bookmarks bar:</span>
+        <a id="bookmarklet-import" class="bookmarklet"
+           title="Drag to bookmarks bar, then click it on any Moxfield, MTGGoldfish or Archidekt deck page.">
+          📥 Import Deck to Oracle
+        </a>
+      </div>
+
+      <label class="sr-only" for="card-input">Card list</label>
+      <textarea id="card-input" rows="8" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+
+      <div class="input-footer">
+        <span class="input-count" id="input-count">0 lines</span>
+        <span class="kbd-hint" id="kbd-hint"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Results panel ═══ -->
+  <section class="panel hidden" id="results-panel">
+    <button class="panel-header" id="results-panel-header" aria-expanded="true" aria-controls="results-panel-body" onclick="togglePanel('results-panel')">
+      <span class="panel-title"><span class="panel-dot"></span><span class="panel-title-text" id="results-panel-title">Search Results</span></span>
+      <span class="panel-chevron" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    <div class="panel-body" id="results-panel-body">
+      <div class="stat-row" id="summary-row"></div>
+
+      <div class="toolrow">
+        <div class="seg" role="group" aria-label="Filter results">
+          <button data-filter="all"     aria-pressed="true"  onclick="filterResults('all')">All</button>
+          <button data-filter="exact"   aria-pressed="false" onclick="filterResults('exact')">Exact</button>
+          <button data-filter="similar" aria-pressed="false" onclick="filterResults('similar')">Partial</button>
+          <button data-filter="none"    aria-pressed="false" onclick="filterResults('none')">Not found</button>
+        </div>
+        <span class="toolrow-divider"></span>
+        <span id="auto-pick-btns" style="display:flex;gap:7px;">
+          <button class="btn btn-ghost btn-sm" onclick="autoPick('random')"  title="Picks one random match per card">🎲 Random</button>
+          <button class="btn btn-ghost btn-sm" onclick="autoPick('modest')"  title="Picks from holo columns (C &amp; D) only">✦ Modest</button>
+          <button class="btn btn-ghost btn-sm" onclick="autoPick('blinged')" title="Picks from foil columns (E &amp; F) only">💎 Blinged</button>
+        </span>
+      </div>
+
+      <div class="results-wrap">
+        <table id="results-table">
+          <thead id="results-thead"></thead>
+          <tbody id="results-tbody"></tbody>
+        </table>
+        <div class="result-cards" id="result-cards"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Generated lists panel ═══ -->
+  <section class="panel hidden" id="lists-panel">
+    <button class="panel-header" id="lists-panel-header" aria-expanded="true" aria-controls="lists-panel-body" onclick="togglePanel('lists-panel')">
+      <span class="panel-title"><span class="panel-dot"></span><span class="panel-title-text">Generated Lists</span></span>
+      <span class="panel-chevron" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    <div class="panel-body" id="lists-panel-body">
+      <div class="stat-row" id="lists-summary-row"></div>
+      <div class="lists-grid">
+
+        <div class="listbox">
+          <div class="listbox-head">
+            <span class="listbox-title">
+              <span class="tag tag-bl">BL</span>
+              <span class="name" id="bl-list-title">BL Buy List</span>
+            </span>
+            <button class="copy-btn" id="copy-bl" onclick="copyList('bl')" aria-label="Copy BL buy list to clipboard">
+              <svg class="ico-copy" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="5.4" y="5.4" width="8.2" height="8.2" rx="1.6" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M10.6 5.4V4a1.6 1.6 0 0 0-1.6-1.6H4a1.6 1.6 0 0 0-1.6 1.6v5a1.6 1.6 0 0 0 1.6 1.6h1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+              <svg class="ico-check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3.2 8.4l3.1 3.1 6.5-6.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="copy-label">Copy</span>
+            </button>
+          </div>
+          <div class="listbox-body">
+            <label class="sr-only" for="bl-output">BL buy list output</label>
+            <textarea class="list-output" id="bl-output" readonly></textarea>
+            <p class="copy-hint">Tab-separated — paste straight into a spreadsheet.</p>
+          </div>
+        </div>
+
+        <div class="listbox">
+          <div class="listbox-head">
+            <span class="listbox-title">
+              <span class="tag tag-tcg">TCG</span>
+              <span class="name" id="tcg-list-title">TCG List</span>
+            </span>
+            <button class="copy-btn" id="copy-tcg" onclick="copyList('tcg')" aria-label="Copy TCG Player list to clipboard">
+              <svg class="ico-copy" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="5.4" y="5.4" width="8.2" height="8.2" rx="1.6" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M10.6 5.4V4a1.6 1.6 0 0 0-1.6-1.6H4a1.6 1.6 0 0 0-1.6 1.6v5a1.6 1.6 0 0 0 1.6 1.6h1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+              <svg class="ico-check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3.2 8.4l3.1 3.1 6.5-6.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="copy-label">Copy</span>
+            </button>
+          </div>
+          <div class="listbox-body">
+            <label class="sr-only" for="tcg-output">TCG Player list output</label>
+            <textarea class="list-output" id="tcg-output" readonly></textarea>
+            <p class="copy-hint">Ready for TCGplayer mass entry.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ACTION BAR — bottom toolbar
+     ══════════════════════════════════════════════════════════════════════ -->
+<nav class="actionbar" aria-label="Actions">
+  <button class="btn btn-accent" id="btn-search" onclick="runSearch()">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.7"/>
+      <path d="M10.6 10.6L14 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    <span class="label">Search</span>
+  </button>
+  <button class="btn btn-solid" id="btn-create" onclick="openNamePrompt()" disabled>
+    <span class="label">Create Lists</span>
+  </button>
+  <button class="btn btn-overflowable" id="btn-deselect" onclick="deselectAll()" disabled>Deselect All</button>
+  <button class="btn btn-overflowable" id="btn-clear" onclick="clearSearch()">Clear</button>
+  <button class="btn btn-overflowable" id="btn-reset" onclick="openResetModal()">Reset</button>
+
+  <span class="actionbar-credit">
+    crafted by <strong>QuestionGod</strong>
+    <button class="chip-btn" onclick="openVersionModal()">v2.0</button>
+    <button class="chip-btn" onclick="openHelpModal()">? Help</button>
+  </span>
+
+  <div class="more-wrap">
+    <button class="btn" id="btn-more" aria-haspopup="menu" aria-expanded="false" aria-label="More actions">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/>
+      </svg>
+    </button>
+    <div class="more-menu" id="more-menu" role="menu">
+      <button role="menuitem" id="more-deselect" onclick="deselectAll(); closeMoreMenu()" disabled>☐ Deselect All</button>
+      <button role="menuitem" onclick="clearSearch(); closeMoreMenu()">✕ Clear Search</button>
+      <button role="menuitem" onclick="openResetModal(); closeMoreMenu()">⟳ Reset Everything</button>
+      <div class="sep"></div>
+      <button role="menuitem" onclick="openHelpModal(); closeMoreMenu()">? Help Guide</button>
+      <button role="menuitem" onclick="openVersionModal(); closeMoreMenu()">📋 Version History</button>
+      <div class="meta"><span>crafted by <strong>QuestionGod</strong></span><span>v2.0</span></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MODALS
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="name-modal" data-dismiss>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
+    <h2 id="name-modal-title">Name your lists</h2>
+    <p>Give this deck a name (e.g. <strong>Alpha</strong>). It labels both the BL Buy List and the TCG list.</p>
+    <label class="sr-only" for="list-name-input">Deck name</label>
+    <input type="text" id="list-name-input" placeholder="Deck name…" maxlength="60">
+    <div class="modal-btns modal-btns-plain" style="margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeNamePrompt()">Cancel</button>
+      <button class="btn btn-solid" onclick="confirmCreateLists()">Create Lists</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reset-modal" data-dismiss>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+    <h2 id="reset-modal-title">Reset everything?</h2>
+    <p>This clears your card list, all search results, and all generated lists. It cannot be undone.</p>
+    <div class="modal-btns modal-btns-plain">
+      <button class="btn btn-ghost" onclick="closeResetModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmReset()">Yes, reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="version-modal" data-dismiss>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="version-modal-title">
+    <div class="modal-head">
+      <h2 id="version-modal-title">Version history</h2>
+      <button class="modal-close" onclick="closeVersionModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-scroll" style="gap:10px;">
+      <div class="vlog">
+        <span class="vlog-ver">v2.0</span>
+        <div class="vlog-notes">
+          <div>Rebuilt interface — new design system, light &amp; dark themes</div>
+          <div>Global dark mode toggle, layered over the per-game themes</div>
+          <div>TCG selector is now a dropdown (bottom sheet on mobile)</div>
+          <div>Banner moved between the top toolbar and the content</div>
+          <div>One-tap copy buttons with inline confirmation</div>
+          <div>Enter to search from the card box</div>
+          <div>Mobile: overflow menu, safe-area insets, larger touch targets</div>
+        </div>
+      </div>
+      <div class="vlog">
+        <span class="vlog-ver">v1.8</span>
+        <div class="vlog-notes">
+          <div>Yu-Gi-Oh! support with gold theme</div>
+          <div>One Piece support with cyan theme</div>
+          <div>TCG switcher expanded to 4 games</div>
+        </div>
+      </div>
+      <div class="vlog">
+        <span class="vlog-ver">v1.7</span>
+        <div class="vlog-notes">
+          <div>Foil &amp; holo column indicators with animated corner strips</div>
+          <div>Hover photo preview for cards with Google Photos sheet links</div>
+          <div>Deck name shown in results panel header after creating lists</div>
+          <div>Animated theme transition when switching TCGs</div>
+        </div>
+      </div>
+      <div class="vlog">
+        <span class="vlog-ver">v1.6</span>
+        <div class="vlog-notes"><div>Smooth scroll to results after search</div><div>UI improvements</div></div>
+      </div>
+      <div class="vlog">
+        <span class="vlog-ver">v1.5</span>
+        <div class="vlog-notes">
+          <div>Dual-face card matching — exact/partial split into separate result rows</div>
+          <div>Set codes, collector numbers &amp; *F* foil markers stripped from searches</div>
+          <div>TCG export deduplicates split rows, keeps full dual-face name</div>
+        </div>
+      </div>
+      <div class="vlog">
+        <span class="vlog-ver">v1.4</span>
+        <div class="vlog-notes">
+          <div>Pokémon game mode</div>
+          <div>Strikethrough cells excluded from Pokémon results</div>
+          <div>Pokémon set codes stripped from search input</div>
+        </div>
+      </div>
+      <div class="vlog">
+        <span class="vlog-ver">v1.3</span>
+        <div class="vlog-notes">
+          <div>Auto-pick buttons: Random Prints, Modest, Blinged Out</div>
+          <div>Floating bottom toolbar stays visible while scrolling</div>
+        </div>
+      </div>
+      <div class="vlog">
+        <span class="vlog-ver">v1.2</span>
+        <div class="vlog-notes"><div>Toast notifications replace static status bar</div></div>
+      </div>
+      <div class="vlog">
+        <span class="vlog-ver">v1.1</span>
+        <div class="vlog-notes">
+          <div>Hyperlinks from sheet shown as clickable match links</div>
+          <div>Saved Lists via Firebase Auth &amp; localStorage</div>
+          <div>Mobile card layout</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeVersionModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="help-modal" data-dismiss>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
+    <div class="modal-head">
+      <h2 id="help-modal-title">🔮 The Oracle — Help Guide</h2>
+      <button class="modal-close" onclick="closeHelpModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-scroll">
+
+      <div class="help-section">
+        <div class="help-heading">🚀 Getting started</div>
+        <p class="help-text">The Oracle matches cards from your deck list against a Google Sheets inventory of singles for sale. Paste your card list, hit Search, select the copies you want, then generate your buy lists.</p>
+        <p class="help-text">You can use The Oracle <strong>without signing in</strong> — signing in with Google only enables saving and loading your generated lists between sessions.</p>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">📋 Step by step</div>
+        <div class="help-steps">
+          <div class="help-step"><span class="step-num">1</span><div><strong>Select your TCG</strong> — use the dropdown in the top bar to choose MTG, Pokémon, Yu-Gi-Oh! or One Piece.</div></div>
+          <div class="help-step"><span class="step-num">2</span><div><strong>Paste your card list</strong> — one card per line, with or without quantities (<code>4 Lightning Bolt</code> or just <code>Lightning Bolt</code>).</div></div>
+          <div class="help-step"><span class="step-num">3</span><div><strong>Search</strong> — press <kbd>Enter</kbd> in the card box on desktop, or tap Search in the bottom bar.</div></div>
+          <div class="help-step"><span class="step-num">4</span><div><strong>Select copies</strong> — tick the specific prints you want, or use Auto-Pick.</div></div>
+          <div class="help-step"><span class="step-num">5</span><div><strong>Create Lists</strong> — generates a BL Buy List for inventory cards and a TCGplayer list for anything not found.</div></div>
+          <div class="help-step"><span class="step-num">6</span><div><strong>Copy</strong> — one tap on either Copy button puts the list on your clipboard.</div></div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">🌙 Dark mode</div>
+        <p class="help-text">The moon/sun button in the top bar toggles dark mode. It's independent of the TCG colour themes — every game works in both light and dark. Your choice is remembered, and if you've never chosen, The Oracle follows your device's appearance setting.</p>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">📥 Import Deck to Oracle bookmarklet</div>
+        <p class="help-text">The bookmarklet imports a deck directly from Moxfield, MTGGoldfish or Archidekt in one click — no copy-pasting.</p>
+        <div class="help-steps">
+          <div class="help-step"><span class="step-num">1</span><div>Make sure your browser's <strong>bookmarks bar is visible</strong> (Ctrl+Shift+B on Chrome/Firefox).</div></div>
+          <div class="help-step"><span class="step-num">2</span><div>Find <strong>📥 Import Deck to Oracle</strong> in the Cards to Search panel.</div></div>
+          <div class="help-step"><span class="step-num">3</span><div><strong>Drag it onto your bookmarks bar.</strong></div></div>
+          <div class="help-step"><span class="step-num">4</span><div>Open any deck page on <strong>Moxfield, MTGGoldfish or Archidekt</strong> and click the bookmark — you'll land back here with the list loaded.</div></div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">📋 Manual import formats</div>
+        <p class="help-text">If you prefer copy-paste, all of these work:</p>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+          <div class="help-row"><span class="help-tag tag-green">Archidekt</span><span>Export → Export Type: Text → uncheck all options</span></div>
+          <div class="help-row"><span class="help-tag tag-violet">Moxfield</span><span>Export → Copy for Moxfield</span></div>
+          <div class="help-row"><span class="help-tag tag-amber">MTGGoldfish</span><span>Export to Arena → copy everything from the Commander section down</span></div>
+          <div class="help-row"><span class="help-tag tag-gray">Plain text</span><span>Any <code>4 Card Name</code> or bare <code>Card Name</code>, one per line</span></div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">🔎 Match types</div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-top:4px;">
+          <div class="help-row"><span class="pill pill-ok">Exact</span><span>The card name matches exactly what's in the inventory.</span></div>
+          <div class="help-row"><span class="pill pill-warn">Partial</span><span>The inventory has a version under a slightly different name — a different printing, alternate art, or the other face of a dual-faced card.</span></div>
+          <div class="help-row"><span class="pill pill-miss">Not found</span><span>No match in the inventory. These are added to your TCGplayer list automatically.</span></div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">✦ Print types (MTG)</div>
+        <p class="help-text">Each inventory copy is categorised by print type, shown as a corner triangle on the result:</p>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-top:6px;">
+          <div class="help-row"><span style="display:inline-block;width:14px;height:14px;background:var(--border-strong);clip-path:polygon(0 100%,100% 100%,100% 0);flex-shrink:0;margin-top:3px;"></span><span><strong>No triangle</strong> — standard non-foil print.</span></div>
+          <div class="help-row"><span style="display:inline-block;width:14px;height:14px;background:linear-gradient(135deg,#a78bfa,#818cf8);clip-path:polygon(0 100%,100% 100%,100% 0);flex-shrink:0;margin-top:3px;"></span><span><strong>Purple triangle</strong> — hologram print (columns C &amp; D).</span></div>
+          <div class="help-row"><span style="display:inline-block;width:14px;height:14px;background:linear-gradient(135deg,#9090ff,#ff90c8,#70eebb);clip-path:polygon(0 100%,100% 100%,100% 0);flex-shrink:0;margin-top:3px;"></span><span><strong>Rainbow triangle</strong> — foil print (columns E &amp; F).</span></div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">🎲 Auto-Pick (MTG only)</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:2px;">
+          <p class="help-text"><strong>🎲 Random</strong> — one random available match per card, from any column.</p>
+          <p class="help-text"><strong>✦ Modest</strong> — hologram prints only (columns C &amp; D).</p>
+          <p class="help-text"><strong>💎 Blinged</strong> — foil prints only (columns E &amp; F).</p>
+          <p class="help-text">Exact matches are always preferred. If no copy exists in the target columns, that card is skipped.</p>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">💾 Saved lists</div>
+        <p class="help-text">Sign in with Google to save generated lists and reload them later from the dropdown at the top. Without signing in everything still works — the list just isn't kept when you leave. Saved lists live in this browser's local storage, so they're per-device.</p>
+      </div>
+
+      <div class="help-section">
+        <div class="help-heading">💡 Tips</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-top:2px;">
+          <p class="help-text">• Set codes and collector numbers are stripped automatically — <code>Lightning Bolt (M10) 146</code> is treated as <code>Lightning Bolt</code>.</p>
+          <p class="help-text">• <code>*F*</code> foil markers are stripped automatically.</p>
+          <p class="help-text">• Use the filter buttons to focus on one result type — your filter is kept when you auto-pick.</p>
+          <p class="help-text">• Hover a match on desktop to preview the card image, where the inventory has a Google Photos link.</p>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeHelpModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="thumb-popup" class="thumb-popup" aria-hidden="true">
+  <img id="thumb-popup-img" src="" alt="">
+</div>
+
+<script>
+/* ==========================================================================
+   GAME CONFIGS
+   Unchanged from v1 — including the Pokémon / YGO / One Piece sheet, which is
+   currently returning a permissions error. That is a known, out-of-scope issue:
+   the fix requires the sheet owner, so the data source is left exactly as-is.
+   ========================================================================== */
+const API_KEY = 'AIzaSyCqy7lcMkyRsc9eVzOEbEpOIen0Ryroi7s';
+
+const GAME_CONFIGS = {
+  mtg: {
+    label:      'Magic: The Gathering',
+    short:      'MTG',
+    tagline:    'Singles inventory · 6 columns',
+    sheetId:    '1E2iSRhhNUjaZ3MblXx_rflpOIkMwK40OgX5X6yXE4zw',
+    sheetName:  'SINGLES',
+    range:      'A1:F10000',
+    skipRows:   3,   // skip rows 0,1,2 (purchase link, headers, notes)
+    skipWords:  ['commander','deck','maybe','sideboard','new cards','stock'],
+    checkStrikethrough: false,
+    // col groups for auto-pick (0-indexed): modest=C,D; blinged=E,F
+    modestCols:  [2, 3],
+    blingedCols: [4, 5],
+    colLabels:  ['Col A','Col B','Col C','Col D','Col E','Col F'],
+    inputHint:  'Paste your deck list below, one card per line.',
+    inputPlaceholder: 'Paste your card list here, one card per line:\n\n4 Lightning Bolt\n2 Snapcaster Mage\nBlack Lotus\n\nTo import from Moxfield, Archidekt or MTGGoldfish,\nuse the 📥 Import Deck to Oracle bookmarklet above.',
+    showAutoPick: true,
+    langCol: null,
+  },
+  pkm: {
+    label:      'Pokémon',
+    short:      'PKM',
+    tagline:    'English · Chinese · Japanese',
+    sheetId:    '1p-6RCADLI0KvRstxEEG8oTZdLXzDc-PSY_rDv-0f-44',
+    sheetName:  'PKM SINGLES',
+    range:      'A1:C10000',
+    skipRows:   2,
+    skipWords:  [],
+    checkStrikethrough: true,
+    modestCols:  [],
+    blingedCols: [],
+    colLabels:  ['English','Chinese','Japanese'],
+    inputHint:  'Paste your Pokémon card list below, one card per line.',
+    inputPlaceholder: 'Paste your Pokémon card list here…\n\nExample:\nCharizard\nPikachu\nMewtwo EX',
+    showAutoPick: false,
+    langCol: null,
+  },
+  ygo: {
+    label:      'Yu-Gi-Oh!',
+    short:      'YGO',
+    tagline:    'Singles inventory',
+    sheetId:    '1p-6RCADLI0KvRstxEEG8oTZdLXzDc-PSY_rDv-0f-44',
+    sheetName:  'YGO',
+    range:      'A1:F10000',
+    skipRows:   4,   // rows 1-4 are headers
+    skipWords:  [],
+    checkStrikethrough: true,
+    modestCols:  [],
+    blingedCols: [],
+    colLabels:  ['Col A','Col B','Col C','Col D','Col E','Col F'],
+    inputHint:  'Paste your Yu-Gi-Oh! card list below, one card per line.',
+    inputPlaceholder: 'Paste your Yu-Gi-Oh! card list here…\n\nExample:\nBlue-Eyes White Dragon\nDark Magician\nExodia the Forbidden One',
+    showAutoPick: false,
+    langCol: null,
+  },
+  op: {
+    label:      'One Piece',
+    short:      'OP',
+    tagline:    'Singles inventory',
+    sheetId:    '1p-6RCADLI0KvRstxEEG8oTZdLXzDc-PSY_rDv-0f-44',
+    sheetName:  'ONE PIECE',
+    range:      'A1:F10000',
+    skipRows:   6,   // rows 1-6 are headers
+    skipWords:  [],
+    checkStrikethrough: true,
+    modestCols:  [],
+    blingedCols: [],
+    colLabels:  ['Col A','Col B','Col C','Col D','Col E','Col F'],
+    inputHint:  'Paste your One Piece card list below, one card per line.',
+    inputPlaceholder: 'Paste your One Piece card list here…\n\nExample:\nMonkey D. Luffy\nRoronoa Zoro\nNami',
+    showAutoPick: false,
+    langCol: null,
+  }
+};
+
+const GAME_ORDER = ['mtg', 'pkm', 'ygo', 'op'];
+
+/* Inline SVG marks — replaces v1's mana-font CDN stylesheet, so the app has no
+   render-blocking external CSS and every game icon is styled the same way. */
+const GAME_ICONS = {
+  mtg: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="46" fill="#2e1065"/>
+          <path d="M50 16c8 14 20 20 30 22-12 6-22 20-30 30-8-10-18-24-30-30 10-2 22-8 30-22z" fill="#c4b5fd"/>
+          <circle cx="50" cy="58" r="7" fill="#2e1065"/>
+        </svg>`,
+  pkm: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="47" fill="#fff" stroke="#222" stroke-width="4"/>
+          <path d="M3 50a47 47 0 0 1 94 0z" fill="#e11d48"/>
+          <rect x="3" y="44" width="94" height="12" fill="#222"/>
+          <circle cx="50" cy="50" r="15" fill="#222"/>
+          <circle cx="50" cy="50" r="8" fill="#fff"/>
+        </svg>`,
+  ygo: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,6 95,94 5,94" fill="#1a1508" stroke="#fbbf24" stroke-width="7" stroke-linejoin="round"/>
+          <ellipse cx="50" cy="66" rx="15" ry="19" fill="#fbbf24"/>
+          <ellipse cx="50" cy="66" rx="8" ry="11" fill="#1a1508"/>
+          <circle cx="50" cy="66" r="4" fill="#fbbf24"/>
+        </svg>`,
+  op:  `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="36" r="25" fill="#67e8f9"/>
+          <circle cx="40" cy="31" r="7" fill="#0c1a2e"/>
+          <circle cx="60" cy="31" r="7" fill="#0c1a2e"/>
+          <path d="M39 47q11 8 22 0" stroke="#0c1a2e" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <line x1="12" y1="68" x2="88" y2="90" stroke="#67e8f9" stroke-width="9" stroke-linecap="round"/>
+          <line x1="88" y1="68" x2="12" y2="90" stroke="#67e8f9" stroke-width="9" stroke-linecap="round"/>
+        </svg>`
+};
+
+let currentGame = 'mtg';
+let currentFilter = 'all';
+
+/* Returns CSS class based on column index */
+function getColClass(col) {
+  const cfg = GAME_CONFIGS[currentGame];
+  if (cfg.blingedCols && cfg.blingedCols.includes(col)) return 'col-foil';
+  if (cfg.modestCols  && cfg.modestCols.includes(col))  return 'col-holo';
+  return 'col-plain';
+}
+
+/* ==========================================================================
+   STATE
+   ========================================================================== */
+let singlesData   = [];
+let searchResults = [];
+let allLists      = [];
+let singlesLoaded = false;
+
+/* ==========================================================================
+   THEME — dark mode, layered over the per-game accent themes
+   ========================================================================== */
+const THEME_KEY = 'oracle_theme';
+
+function resolveTheme() {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', theme === 'dark' ? '#100e18' : '#14121f');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  }
+}
+
+function toggleTheme() {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+  setStatus(next === 'dark' ? 'Dark mode on.' : 'Light mode on.', 'info', 1800);
+}
+
+/* Apply before first paint to avoid a flash of the wrong theme */
+applyTheme(resolveTheme());
+
+/* Follow the OS only while the user hasn't made an explicit choice */
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (!localStorage.getItem(THEME_KEY)) applyTheme(e.matches ? 'dark' : 'light');
+});
+
+/* ==========================================================================
+   TCG PICKER
+   ========================================================================== */
+function buildTcgMenu() {
+  const menu = document.getElementById('tcg-menu');
+  menu.innerHTML = GAME_ORDER.map(g => {
+    const cfg = GAME_CONFIGS[g];
+    return `<button class="tcg-opt" role="option" data-game="${g}" aria-selected="${g === currentGame}">
+      <span class="tcg-ico">${GAME_ICONS[g]}</span>
+      <span class="tcg-opt-body">
+        <span class="tcg-opt-name">${esc(cfg.label)}</span>
+        <span class="tcg-opt-meta">${esc(cfg.tagline)}</span>
+      </span>
+      <svg class="tcg-opt-check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3.2 8.4l3.1 3.1 6.5-6.6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>`;
+  }).join('');
+
+  menu.querySelectorAll('.tcg-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      closeTcgMenu();
+      selectGame(btn.dataset.game);
+    });
+  });
+}
+
+function openTcgMenu() {
+  document.getElementById('tcg-menu').classList.add('open');
+  document.getElementById('tcg-scrim').classList.add('open');
+  document.getElementById('tcg-trigger').setAttribute('aria-expanded', 'true');
+}
+function closeTcgMenu() {
+  document.getElementById('tcg-menu').classList.remove('open');
+  document.getElementById('tcg-scrim').classList.remove('open');
+  document.getElementById('tcg-trigger').setAttribute('aria-expanded', 'false');
+}
+function toggleTcgMenu() {
+  const open = document.getElementById('tcg-trigger').getAttribute('aria-expanded') === 'true';
+  open ? closeTcgMenu() : openTcgMenu();
+}
+
+function syncTcgTrigger() {
+  const cfg = GAME_CONFIGS[currentGame];
+  document.getElementById('tcg-trigger-ico').innerHTML = GAME_ICONS[currentGame];
+  document.getElementById('tcg-trigger-label').textContent = cfg.label;
+  document.getElementById('tcg-trigger-short').textContent = cfg.short;
+  document.querySelectorAll('.tcg-opt').forEach(o => {
+    o.setAttribute('aria-selected', String(o.dataset.game === currentGame));
+  });
+}
+
+/* ==========================================================================
+   GAME SWITCHER
+   ========================================================================== */
+function selectGame(game) {
+  if (!GAME_CONFIGS[game] || game === currentGame) return;
+  switchGame(game);
+}
+
+function switchGame(forceGame) {
+  const newGame = forceGame || currentGame;
+  currentGame   = newGame;
+  singlesLoaded = false;
+  singlesData   = [];
+  searchResults = [];
+  allLists      = [];
+
+  const cfg = GAME_CONFIGS[currentGame];
+
+  /* Accent + banner art both key off this one attribute */
+  document.documentElement.setAttribute('data-game', currentGame);
+
+  syncTcgTrigger();
+
+  document.getElementById('hero-title').textContent = cfg.label;
+  document.getElementById('auto-pick-btns').style.display = cfg.showAutoPick ? '' : 'none';
+  document.getElementById('input-hint').textContent = cfg.inputHint;
+  document.getElementById('card-input').placeholder = cfg.inputPlaceholder;
+
+  clearSearch({ silent: true });
+  document.getElementById('lists-panel').classList.add('hidden');
+  document.getElementById('lists-summary-row').innerHTML = '';
+
+  loadSingles(false);
+}
+
+/* ==========================================================================
+   INIT
+   ========================================================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  buildTcgMenu();
+  syncTcgTrigger();
+  document.getElementById('card-input').placeholder = GAME_CONFIGS[currentGame].inputPlaceholder;
+  document.getElementById('hero-title').textContent = GAME_CONFIGS[currentGame].label;
+
+  /* ── TCG picker wiring ── */
+  document.getElementById('tcg-trigger').addEventListener('click', toggleTcgMenu);
+  document.getElementById('tcg-scrim').addEventListener('click', closeTcgMenu);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#tcg')) closeTcgMenu();
+    if (!e.target.closest('.more-wrap')) closeMoreMenu();
+  });
+
+  /* ── Theme toggle ── */
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+  /* ── Overflow menu (mobile bottom bar) ── */
+  document.getElementById('btn-more').addEventListener('click', e => {
+    e.stopPropagation();
+    toggleMoreMenu();
+  });
+
+  /* ── Escape closes everything transient ── */
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    closeTcgMenu();
+    closeMoreMenu();
+    document.querySelectorAll('.modal-overlay.visible').forEach(m => m.classList.remove('visible'));
+  });
+
+  /* ── Click the backdrop to dismiss a modal ── */
+  document.querySelectorAll('.modal-overlay[data-dismiss]').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.classList.remove('visible');
+    });
+  });
+
+  /* ── Card input: Enter to search, live line count ── */
+  const input = document.getElementById('card-input');
+  input.addEventListener('input', updateInputCount);
+  input.addEventListener('keydown', onCardInputKeydown);
+  updateInputCount();
+  setKeyboardHint();
+
+  /* ── Name modal: Enter confirms ── */
+  document.getElementById('list-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); confirmCreateLists(); }
+  });
+
+  /* ── Bookmarklet href ── */
+  const appUrl = window.location.origin + window.location.pathname;
+  const combinedBM = `javascript:(function(){var appUrl='${appUrl}';var m=location.href.match(/moxfield\\.com\\/decks\\/([a-zA-Z0-9_-]+)/);if(m){var id=m[1];fetch('https://api2.moxfield.com/v3/decks/all/'+id).then(function(r){return r.json();}).then(function(d){var eid=d.exportId;var name=encodeURIComponent(d.name||'Moxfield Deck');fetch('https://api2.moxfield.com/v2/decks/all/'+id+'/export?exportId='+eid,{headers:{Accept:'text/plain'}}).then(function(r){return r.text();}).then(function(t){location.href=appUrl+'#import='+encodeURIComponent(t)+'&name='+name;});});return;}var g=location.href.match(/mtggoldfish\\.com\\/deck\\/(\\d+)/);if(g){var name=encodeURIComponent(document.title.replace(' - MTGGoldfish','').trim());fetch('/deck/'+g[1]+'/download').then(function(r){return r.text();}).then(function(t){location.href=appUrl+'#import='+encodeURIComponent(t)+'&name='+name;});return;}var a=location.href.match(/archidekt\\.com\\/decks\\/(\\d+)/);if(a){var id=a[1];fetch('https://archidekt.com/api/decks/'+id+'/').then(function(r){return r.json();}).then(function(d){var skip=['maybeboard','sideboard','acquisition list'];var cards=[];(d.cards||[]).forEach(function(c){var cat=(c.categories&&c.categories[0]||'').toLowerCase();if(skip.some(function(s){return cat.includes(s);}))return;var n=c.card&&(c.card.oracleCard&&c.card.oracleCard.name||c.card.name);if(n)cards.push((c.quantity||1)+' '+n);});var name=encodeURIComponent(d.name||'Archidekt Deck');location.href=appUrl+'#import='+encodeURIComponent(cards.join('\\n'))+'&name='+name;});return;}alert('Open a Moxfield, MTGGoldfish, or Archidekt deck page first.');})();`;
+  document.getElementById('bookmarklet-import').href = combinedBM;
+
+  /* ── Handle #import=… from the bookmarklet ── */
+  const hash = window.location.hash;
+  if (hash.startsWith('#import=')) {
+    try {
+      const params = new URLSearchParams(hash.slice(1));
+      const text = decodeURIComponent(params.get('import') || '');
+      const name = decodeURIComponent(params.get('name') || '');
+      if (text) {
+        const lines = text.split('\n')
+          .map(l => l.trim())
+          .filter(l => l && !l.startsWith('//') && !l.startsWith('#'));
+        input.value = lines.join('\n');
+        updateInputCount();
+        history.replaceState(null, '', window.location.pathname);
+        setStatus(`Deck <strong>${esc(name || 'imported')}</strong> loaded — hit Search to find matches.`, 'success');
+      }
+    } catch (e) {
+      console.warn('Bookmarklet import failed:', e);
+    }
+  }
+
+  loadSingles(false);
+});
+
+/* ── Enter to search ────────────────────────────────────────────────────────
+   Desktop: Enter searches, Shift+Enter inserts a newline (as requested).
+   Touch devices: Enter always inserts a newline — on an iPhone there is no
+   Shift+Enter, so binding Enter to Search would make it impossible to type a
+   multi-line list. Cmd/Ctrl+Enter still searches everywhere, so a hardware
+   keyboard on an iPad behaves like desktop.
+   ─────────────────────────────────────────────────────────────────────────── */
+const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches;
+
+function onCardInputKeydown(e) {
+  if (e.key !== 'Enter') return;
+  const modifier = e.metaKey || e.ctrlKey;
+  if (modifier) { e.preventDefault(); runSearch(); return; }
+  if (e.shiftKey || IS_TOUCH) return;   // newline
+  e.preventDefault();
+  runSearch();
+}
+
+function setKeyboardHint() {
+  const hint = document.getElementById('kbd-hint');
+  hint.innerHTML = IS_TOUCH
+    ? 'Tap <strong>Search</strong> below when your list is ready'
+    : '<kbd>Enter</kbd> to search · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line';
+}
+
+function updateInputCount() {
+  const raw = document.getElementById('card-input').value;
+  const n = raw.split('\n').filter(l => l.trim().length).length;
+  document.getElementById('input-count').textContent = n === 1 ? '1 line' : `${n} lines`;
+}
+
+/* ==========================================================================
+   OVERFLOW MENU
+   ========================================================================== */
+function toggleMoreMenu() {
+  const menu = document.getElementById('more-menu');
+  const open = menu.classList.toggle('open');
+  document.getElementById('btn-more').setAttribute('aria-expanded', String(open));
+}
+function closeMoreMenu() {
+  document.getElementById('more-menu').classList.remove('open');
+  document.getElementById('btn-more').setAttribute('aria-expanded', 'false');
+}
+
+/* ==========================================================================
+   LOAD SINGLES
+   ========================================================================== */
+function setInventoryChip(state, text) {
+  const chip = document.getElementById('singles-status');
+  chip.dataset.state = state;
+  document.getElementById('singles-status-text').textContent = text;
+}
+
+async function loadSingles(force = false) {
+  if (singlesLoaded && !force) return;
+
+  const cfg = GAME_CONFIGS[currentGame];
+
+  setStatus(`Loading ${cfg.label} singles…`, 'info');
+  showProgress(0, 'Fetching sheet data…');
+  setInventoryChip('loading', 'Loading inventory…');
+
+  try {
+    const rows = await fetchSheetData(cfg);
+    showProgress(50, 'Parsing data…');
+    parseSingles(rows, cfg);
+    singlesLoaded = true;
+    setInventoryChip('ready', `${singlesData.length.toLocaleString()} cards in stock`);
+    setStatus(`${cfg.label} inventory loaded — ${singlesData.length.toLocaleString()} cards ready.`, 'success');
+    hideProgress();
+  } catch (e) {
+    hideProgress();
+    setInventoryChip('error', 'Inventory unavailable');
+    setStatus(`Couldn't load the ${esc(cfg.label)} sheet — ${esc(e.message)}`, 'error', 8000);
+  }
+}
+
+/* Fetches sheet via Sheets API v4 — returns cell values, hyperlinks, strikethrough */
+async function fetchSheetData(cfg) {
+  const fields = cfg.checkStrikethrough
+    ? 'sheets.data.rowData.values(formattedValue,hyperlink,effectiveFormat.textFormat.strikethrough)'
+    : 'sheets.data.rowData.values(formattedValue,hyperlink)';
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}` +
+    `?key=${API_KEY}` +
+    `&includeGridData=true` +
+    `&ranges=${encodeURIComponent(cfg.sheetName + '!' + cfg.range)}` +
+    `&fields=${fields}`;
+
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  const rowData = data.sheets?.[0]?.data?.[0]?.rowData || [];
+
+  return rowData.map(row =>
+    (row.values || []).map(cell => ({
+      value:         cell.formattedValue || '',
+      url:           cell.hyperlink      || null,
+      strikethrough: cell.effectiveFormat?.textFormat?.strikethrough || false
+    }))
+  );
+}
+
+function parseSingles(rows, cfg) {
+  singlesData = [];
+  for (let r = cfg.skipRows; r < rows.length; r++) {
+    const row = rows[r];
+    for (let c = 0; c < row.length; c++) {
+      const cell = row[c];
+      if (cfg.checkStrikethrough && cell.strikethrough) continue;
+      const val = (cell.value || '').trim();
+      if (!val) continue;
+      const lower = val.toLowerCase();
+      if (cfg.skipWords.some(w => lower === w)) continue;
+      singlesData.push({ value: val, valueLower: lower, col: c, url: cell.url || null });
+    }
+  }
+}
+
+/* ==========================================================================
+   NORMALIZE  (matching logic carried over from v1 unchanged)
+   ========================================================================== */
+function normalizeCardName(val) {
+  let name = (val || '').trim();
+
+  // Strip leading quantity ("3 Pikachu" → "Pikachu")
+  name = name.replace(/^\d+\s+/, '').trim();
+
+  if (currentGame === 'pkm') {
+    // Strip trailing Pokémon set code e.g. "me2pt5-184"
+    name = name.replace(/\s+[a-z0-9]+(?:pt\d+)?-\d+$/i, '').trim();
+    return { display: name, search: name };
+  }
+
+  // 1. Strip *F* foil marker
+  name = name.replace(/\s*\*F\*\s*/gi, ' ').trim();
+  // 2. Strip parenthesised set codes and any trailing collector number
+  name = name.replace(/\s*\([^)]*\)\s*[A-Z0-9][-A-Z0-9]*\s*$/i, '').trim();
+  name = name.replace(/\s*\([^)]*\)\s*$/i, '').trim();
+  // 3. Strip remaining trailing collector numbers e.g. "344" or "41p"
+  name = name.replace(/\s+\d+[a-z★]*$/i, '').trim();
+
+  const display = name;
+  const search  = name.replace(/\s*\/+\s*/g, ' ').trim();
+  return { display, search };
+}
+
+/* ==========================================================================
+   MATCHING  (unchanged from v1)
+   ========================================================================== */
+function isWordBoundaryMatch(haystack, needle) {
+  const idx = haystack.indexOf(needle);
+  if (idx === -1) return false;
+  const before = idx === 0 ? '' : haystack[idx - 1];
+  const after  = idx + needle.length >= haystack.length ? '' : haystack[idx + needle.length];
+  const boundaryRe = /[^a-z0-9]/i;
+  return (before === '' || boundaryRe.test(before)) && (after === '' || boundaryRe.test(after));
+}
+
+function findMatches(searchLower, firstSideLower, isDualFace) {
+  const exact = [], similar = [];
+
+  for (const entry of singlesData) {
+    const cell = entry.valueLower;
+    const cellHasSlash = /\//.test(cell);
+
+    if (isDualFace) {
+      // Search HAS a slash — exact only if the cell also has one and the first side matches
+      if (cellHasSlash && isWordBoundaryMatch(cell, firstSideLower)) exact.push(entry);
+    } else {
+      // Search has NO slash — exact only if the cell also has none
+      if (!cellHasSlash && isWordBoundaryMatch(cell, searchLower)) {
+        exact.push(entry);
+      } else if (cellHasSlash) {
+        const cellFirstSide = cell.split(/\s*\/+\s*/)[0].trim();
+        if (cellFirstSide === searchLower) similar.push(entry);
+      }
+    }
+  }
+  return { exact, similar };
+}
+
+/* ==========================================================================
+   SEARCH
+   ========================================================================== */
+async function runSearch() {
+  if (!singlesLoaded) {
+    await loadSingles(false);
+    if (!singlesLoaded) return;
+  }
+
+  const cfg = GAME_CONFIGS[currentGame];
+  const raw = document.getElementById('card-input').value.trim();
+  if (!raw) { setStatus('Paste a card list first.', 'error'); return; }
+
+  if (/archidekt\.com\/decks\/\d+|mtggoldfish\.com\/deck\/\d+|moxfield\.com\/decks\/[a-zA-Z0-9_-]+/.test(raw)) {
+    setStatus('URL importing isn\'t supported — use the 📥 <strong>Import Deck to Oracle</strong> bookmarklet on the deck page instead.', 'error', 8000);
+    return;
+  }
+
+  const lines = raw.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+    .filter(l => !cfg.skipWords.includes(l.toLowerCase().replace(/^\d+\s+/, '')));
+
+  if (!lines.length) { setStatus('No valid card names found.', 'error'); return; }
+
+  setPanelExpanded('input-panel', false);
+
+  document.getElementById('btn-search').disabled = true;
+  showProgress(0, 'Searching…');
+
+  searchResults = [];
+  let exact = 0, partial = 0, notFound = 0;
+
+  const chunkSize = 30;
+  for (let i = 0; i < lines.length; i += chunkSize) {
+    for (const line of lines.slice(i, i + chunkSize)) {
+      const { display, search } = normalizeCardName(line);
+      if (!search) continue;
+
+      const isDualFace = /\//.test(display);
+      const firstSide  = isDualFace ? display.split(/\/+/)[0].trim().toLowerCase() : search.toLowerCase();
+      const matches    = findMatches(search.toLowerCase(), firstSide, isDualFace);
+
+      if (matches.exact.length) {
+        exact++;
+        searchResults.push({ searched: display, searchStr: search, statusType: 'exact',
+                             exact: matches.exact, similar: [], checked: [] });
+      }
+      if (matches.similar.length) {
+        partial++;
+        searchResults.push({ searched: display, searchStr: search, statusType: 'similar',
+                             exact: [], similar: matches.similar, checked: [] });
+      }
+      if (!matches.exact.length && !matches.similar.length) {
+        notFound++;
+        searchResults.push({ searched: display, searchStr: search, statusType: 'none',
+                             exact: [], similar: [], checked: [] });
+      }
+    }
+
+    showProgress(
+      Math.min(100, Math.round(((i + chunkSize) / lines.length) * 100)),
+      `Searching ${Math.min(i + chunkSize, lines.length)} of ${lines.length} cards…`
+    );
+    await sleep(0);
+  }
+
+  hideProgress();
+  document.getElementById('btn-search').disabled   = false;
+  document.getElementById('btn-create').disabled   = false;
+  document.getElementById('btn-deselect').disabled = false;
+  const moreDeselect = document.getElementById('more-deselect');
+  if (moreDeselect) moreDeselect.disabled = false;
+
+  currentFilter = 'all';
+  syncFilterButtons();
+  renderResults('all');
+  renderSummary(exact, partial, notFound);
+
+  document.getElementById('results-panel').classList.remove('hidden');
+  setStatus(`Search complete — <strong>${exact}</strong> exact · <strong>${partial}</strong> partial · <strong>${notFound}</strong> not found`, 'success');
+
+  setTimeout(() => {
+    document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+/* ==========================================================================
+   RENDER RESULTS
+   ========================================================================== */
+const COLS = 3; // match columns per row
+
+function passesFilter(r, filter) {
+  if (filter === 'all') return true;
+  if (filter === 'exact')   return r.statusType === 'exact';
+  if (filter === 'similar') return r.statusType === 'similar';
+  if (filter === 'none')    return r.statusType === 'none';
+  return true;
+}
+
+function renderResults(filter) {
+  if (filter === undefined) filter = currentFilter;
+  currentFilter = filter;
+
+  const table = document.getElementById('results-table');
+  const thead = document.getElementById('results-thead');
+  const tbody = document.getElementById('results-tbody');
+
+  /* Column sizing */
+  const matchWidth = Math.floor(68 / COLS);
+  let colHtml = '<colgroup><col style="width:22%"><col style="width:11%">';
+  for (let m = 0; m < COLS; m++) colHtml += `<col style="width:38px"><col style="width:${matchWidth}%">`;
+  colHtml += '</colgroup>';
+
+  let hHtml = '<tr><th>Card name</th><th>Status</th>';
+  for (let m = 0; m < COLS; m++) hHtml += '<th class="sel-col" aria-label="Select">✓</th><th>Match</th>';
+  thead.innerHTML = hHtml + '</tr>';
+
+  const oldColgroup = table.querySelector('colgroup');
+  if (oldColgroup) oldColgroup.remove();
+  table.insertAdjacentHTML('afterbegin', colHtml);
+
+  /* Table body */
+  let html = '';
+  for (let ri = 0; ri < searchResults.length; ri++) {
+    const r = searchResults[ri];
+    if (!passesFilter(r, filter)) continue;
+
+    const statusLabel =
+      r.statusType === 'exact'   ? '<span class="pill pill-ok">Exact</span>' :
+      r.statusType === 'similar' ? '<span class="pill pill-warn">Partial</span>' :
+                                   '<span class="pill pill-miss">Not found</span>';
+
+    const allMatches = [...r.exact, ...r.similar];
+    const chunks = [];
+    for (let i = 0; i < Math.max(allMatches.length, 1); i += COLS) {
+      chunks.push(allMatches.slice(i, i + COLS));
+    }
+
+    for (let ci = 0; ci < chunks.length; ci++) {
+      const chunk = chunks[ci];
+      const isLast = ci === chunks.length - 1;
+      html += `<tr data-ri="${ri}"${!isLast ? ' style="border-bottom:none;"' : ''}>`;
+
+      if (ci === 0) {
+        const rs = chunks.length > 1 ? ` rowspan="${chunks.length}"` : '';
+        html += `<td${rs} class="cell-name" style="vertical-align:top;">${esc(r.searched)}</td>`;
+        html += `<td${rs} style="vertical-align:top;">${statusLabel}</td>`;
+      }
+
+      for (let m = 0; m < COLS; m++) {
+        if (m < chunk.length) {
+          const globalIdx = ci * COLS + m;
+          const match     = chunk[m];
+          const isExact   = globalIdx < r.exact.length;
+          const cellClass = isExact ? 'cell-ok' : 'cell-warn';
+          const checked   = r.checked.includes(globalIdx) ? 'checked' : '';
+          const label = match.url
+            ? `<a class="match-link" href="${esc(match.url)}" target="_blank" rel="noopener">${esc(match.value)}</a>`
+            : esc(match.value);
+
+          // No whitespace inside the select cell — a stray text node would be
+          // rendered as an ellipsis by the column's text-overflow rule.
+          html += `<td class="sel-col ${cellClass}">` +
+            `<input type="checkbox" ${checked} aria-label="Select ${esc(match.value)}" onchange="toggleCheck(${ri},${globalIdx},this)">` +
+            `</td>` +
+            `<td class="${cellClass}">` +
+            `<span class="match ${getColClass(match.col)}"><span class="match-strip"></span><span class="match-text">${label}</span></span>` +
+            `</td>`;
+        } else {
+          html += '<td></td><td></td>';
+        }
+      }
+      html += '</tr>';
+    }
+  }
+  tbody.innerHTML = html || emptyRow();
+
+  /* Mobile cards */
+  const cardWrap = document.getElementById('result-cards');
+  let cardHtml = '';
+  for (let ri = 0; ri < searchResults.length; ri++) {
+    const r = searchResults[ri];
+    if (!passesFilter(r, filter)) continue;
+
+    const statusLabel =
+      r.statusType === 'exact'   ? '<span class="pill pill-ok">Exact</span>' :
+      r.statusType === 'similar' ? '<span class="pill pill-warn">Partial</span>' :
+                                   '<span class="pill pill-miss">Not found</span>';
+
+    const allMatches = [...r.exact, ...r.similar];
+    cardHtml += `<div class="rc"><div class="rc-head"><span class="rc-name">${esc(r.searched)}</span>${statusLabel}</div>`;
+
+    if (!allMatches.length) {
+      cardHtml += '<div class="rc-empty">No matches in the inventory</div>';
+    } else {
+      cardHtml += '<div class="rc-body">';
+      allMatches.forEach((match, globalIdx) => {
+        const isExact = globalIdx < r.exact.length;
+        const checked = r.checked.includes(globalIdx) ? 'checked' : '';
+        const label = match.url
+          ? `<a href="${esc(match.url)}" target="_blank" rel="noopener">${esc(match.value)}</a>`
+          : esc(match.value);
+        cardHtml += `<label class="rc-row ${isExact ? 'is-ok' : 'is-warn'}">
+            <input type="checkbox" ${checked} onchange="toggleCheck(${ri},${globalIdx},this)">
+            <span class="rc-label">${label}</span>
+          </label>`;
+      });
+      cardHtml += '</div>';
+    }
+    cardHtml += '</div>';
+  }
+  cardWrap.innerHTML = cardHtml || emptyBlock();
+
+  attachHoverPreviews();
+}
+
+function emptyRow() {
+  return `<tr><td colspan="${2 + COLS * 2}">${emptyBlock()}</td></tr>`;
+}
+function emptyBlock() {
+  return `<div class="empty">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <div>No results match this filter.</div>
+  </div>`;
+}
+
+function syncFilterButtons() {
+  document.querySelectorAll('.seg button[data-filter]').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.filter === currentFilter));
+  });
+}
+
+function filterResults(type) {
+  currentFilter = type;
+  syncFilterButtons();
+  renderResults(type);
+}
+
+/* ── Summary with count-up ── */
+function animateCount(el, target, duration = 900) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    el.textContent = target;
+    return;
+  }
+  const start = performance.now();
+  function step(now) {
+    const pct = Math.min((now - start) / duration, 1);
+    el.textContent = Math.round((1 - Math.pow(1 - pct, 3)) * target);
+    if (pct < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function renderSummary(exact, partial, notFound) {
+  document.getElementById('summary-row').innerHTML = `
+    <div class="stat stat-ok"><span class="num" id="sc-exact">0</span><span class="lbl">Exact matches</span></div>
+    <div class="stat stat-warn"><span class="num" id="sc-partial">0</span><span class="lbl">Partial matches</span></div>
+    <div class="stat stat-miss"><span class="num" id="sc-none">0</span><span class="lbl">Not found</span></div>`;
+  animateCount(document.getElementById('sc-exact'),   exact);
+  animateCount(document.getElementById('sc-partial'), partial);
+  animateCount(document.getElementById('sc-none'),    notFound);
+}
+
+/* ==========================================================================
+   AUTO-PICK
+   ========================================================================== */
+function autoPick(mode) {
+  if (!searchResults.length) return;
+
+  const cfg = GAME_CONFIGS[currentGame];
+  let picked = 0;
+
+  for (const r of searchResults) {
+    if (!r.exact.length && !r.similar.length) continue;
+
+    const exactIndices   = r.exact.map((_, i) => i);
+    const similarIndices = r.similar.map((_, i) => r.exact.length + i);
+
+    const colFilter = (indices, src) => indices.filter(i => {
+      const match = i < r.exact.length ? r.exact[i] : r.similar[i - r.exact.length];
+      return src.includes(match.col);
+    });
+
+    let pool = [];
+    if (mode === 'random') {
+      pool = exactIndices.length ? exactIndices : similarIndices;
+    } else if (mode === 'modest') {
+      pool = colFilter(exactIndices, cfg.modestCols);
+      if (!pool.length) pool = colFilter(similarIndices, cfg.modestCols);
+    } else if (mode === 'blinged') {
+      pool = colFilter(exactIndices, cfg.blingedCols);
+      if (!pool.length) pool = colFilter(similarIndices, cfg.blingedCols);
+    }
+
+    if (!pool.length) continue;
+    r.checked = [pool[Math.floor(Math.random() * pool.length)]];
+    picked++;
+  }
+
+  renderResults();   // keeps the active filter
+
+  const messages = {
+    random:  `🎲 Picked one random print for <strong>${picked}</strong> card${picked !== 1 ? 's' : ''}.`,
+    modest:  `✦ Selected a holo print (cols C &amp; D) for <strong>${picked}</strong> card${picked !== 1 ? 's' : ''}. Cards with no holo option were skipped.`,
+    blinged: `💎 Selected a foil print (cols E &amp; F) for <strong>${picked}</strong> card${picked !== 1 ? 's' : ''}. Cards with no foil option were skipped.`
+  };
+  setStatus(messages[mode], 'success');
+}
+
+/* ==========================================================================
+   SELECTION
+   ========================================================================== */
+function toggleCheck(ri, matchIndex, el) {
+  const r = searchResults[ri];
+  if (el.checked) {
+    if (!r.checked.includes(matchIndex)) r.checked.push(matchIndex);
+  } else {
+    r.checked = r.checked.filter(i => i !== matchIndex);
+  }
+}
+
+function deselectAll() {
+  for (const r of searchResults) r.checked = [];
+  renderResults();
+  setStatus('All selections cleared.', 'info');
+}
+
+/* ==========================================================================
+   CREATE LISTS
+   ========================================================================== */
+function openNamePrompt() {
+  document.getElementById('list-name-input').value = '';
+  document.getElementById('name-modal').classList.add('visible');
+  setTimeout(() => document.getElementById('list-name-input').focus(), 80);
+}
+function closeNamePrompt() {
+  document.getElementById('name-modal').classList.remove('visible');
+}
+
+function confirmCreateLists() {
+  let name = document.getElementById('list-name-input').value.trim();
+  name = name.replace(/[\\\/\?\*\[\]]/g, ' ').trim();
+  if (!name) { setStatus('Enter a name for the list.', 'error'); return; }
+  closeNamePrompt();
+  createLists(name);
+}
+
+function createLists(name) {
+  // BL: checked cards, consolidated by value
+  const blMap = {};
+  for (const r of searchResults) {
+    if (!r.checked.length) continue;
+    const allMatches = [...r.exact, ...r.similar];
+    for (const mi of r.checked) {
+      if (mi >= allMatches.length) continue;
+      const match = allMatches[mi];
+      const key = match.value.toLowerCase();
+      if (!blMap[key]) blMap[key] = { name: match.value, qty: 1 };
+      else blMap[key].qty++;
+    }
+  }
+  const blItems = Object.values(blMap).sort((a, b) => a.name.localeCompare(b.name));
+
+  // TCG: cards with no selection, deduplicated by name
+  const tcgCheckedNames = new Set();
+  for (const r of searchResults) {
+    if (r.checked.length) {
+      const cardName = r.searched.includes('/') ? r.searched.split(/\s*\/+\s*/)[0].trim() : r.searched;
+      tcgCheckedNames.add(cardName.toLowerCase());
+    }
+  }
+  const tcgSeen = new Set();
+  const tcgItems = [];
+  for (const r of searchResults) {
+    if (r.checked.length) continue;
+    const cardName = r.searched.includes('/')
+      ? r.searched.split(/\s*\/+\s*/).map(s => s.trim()).join(' // ')
+      : r.searched;
+    const key = cardName.split('//')[0].trim().toLowerCase();
+    if (!tcgCheckedNames.has(key) && !tcgSeen.has(key)) {
+      tcgSeen.add(key);
+      tcgItems.push(cardName);
+    }
+  }
+  tcgItems.sort((a, b) => a.localeCompare(b));
+
+  allLists.push({ name, bl: blItems, tcg: tcgItems });
+
+  const blTotal  = blItems.reduce((s, i) => s + i.qty, 0);
+  const tcgTotal = tcgItems.length;
+
+  renderLists(name, blItems, tcgItems);
+  document.getElementById('lists-panel').classList.remove('hidden');
+  setPanelExpanded('results-panel', false);
+
+  document.getElementById('results-panel-title').textContent = `Search Results — ${name}`;
+
+  document.getElementById('lists-summary-row').innerHTML = `
+    <div class="stat stat-info"><span class="num">${blTotal}</span><span class="lbl">Total BL cards</span></div>
+    <div class="stat stat-violet"><span class="num">${tcgTotal}</span><span class="lbl">Total TCG cards</span></div>`;
+
+  document.getElementById('lists-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setStatus(`Lists created for <strong>${esc(name)}</strong> — BL: ${blTotal} · TCG: ${tcgTotal}`, 'success');
+}
+
+function renderLists(name, blItems, tcgItems) {
+  document.getElementById('bl-list-title').textContent  = `${name} — Buy List`;
+  document.getElementById('tcg-list-title').textContent = `${name} — TCGplayer`;
+
+  let blText = blItems.map(i => `${i.qty}\t${i.name}`).join('\n');
+  if (blItems.length) blText += `\nTOTAL\t${blItems.reduce((s, i) => s + i.qty, 0)}`;
+  document.getElementById('bl-output').value = blText || '(no cards selected)';
+
+  let tcgText = tcgItems.map(i => `1 ${i}`).join('\n');
+  if (tcgItems.length) tcgText += `\nTOTAL: ${tcgItems.length}`;
+  document.getElementById('tcg-output').value = tcgText || '(no cards)';
+}
+
+/* ── One-tap copy ─────────────────────────────────────────────────────────
+   Strips the TOTAL line, writes to the clipboard, and confirms inline on the
+   button itself (a toast alone is easy to miss on a phone).
+   ─────────────────────────────────────────────────────────────────────────*/
+const _copyTimers = {};
+
+async function copyList(which) {
+  const el   = document.getElementById(which + '-output');
+  const btn  = document.getElementById('copy-' + which);
+  const text = el.value.split('\n').filter(l => !l.startsWith('TOTAL')).join('\n');
+
+  if (!text.trim() || text.startsWith('(no ')) {
+    setStatus('Nothing to copy yet — create a list first.', 'error');
+    return;
+  }
+
+  const ok = await writeClipboard(text, el);
+  if (!ok) {
+    setStatus('Couldn\'t reach the clipboard — the list is selected, press ⌘/Ctrl+C.', 'error');
+    return;
+  }
+
+  const label = btn.querySelector('.copy-label');
+  btn.classList.add('copied');
+  if (label) label.textContent = 'Copied';
+  clearTimeout(_copyTimers[which]);
+  _copyTimers[which] = setTimeout(() => {
+    btn.classList.remove('copied');
+    if (label) label.textContent = 'Copy';
+  }, 1900);
+
+  const lineCount = text.split('\n').filter(l => l.trim()).length;
+  setStatus(`${which === 'bl' ? 'BL buy list' : 'TCGplayer list'} copied — ${lineCount} line${lineCount !== 1 ? 's' : ''}.`, 'success', 2400);
+}
+
+async function writeClipboard(text, fallbackEl) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (e) { /* fall through */ }
+
+  // Fallback: select the textarea and use execCommand (older / non-secure contexts)
+  try {
+    fallbackEl.removeAttribute('readonly');
+    fallbackEl.focus();
+    fallbackEl.setSelectionRange(0, fallbackEl.value.length);
+    const ok = document.execCommand('copy');
+    fallbackEl.setAttribute('readonly', '');
+    return ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+/* ==========================================================================
+   CLEAR / RESET
+   ========================================================================== */
+function clearSearch(opts = {}) {
+  document.getElementById('card-input').value = '';
+  updateInputCount();
+  searchResults = [];
+  document.getElementById('results-panel').classList.add('hidden');
+  document.getElementById('results-tbody').innerHTML = '';
+  document.getElementById('results-thead').innerHTML = '';
+  document.getElementById('summary-row').innerHTML   = '';
+  document.getElementById('btn-create').disabled     = true;
+  document.getElementById('btn-deselect').disabled   = true;
+  const moreDeselect = document.getElementById('more-deselect');
+  if (moreDeselect) moreDeselect.disabled = true;
+  document.getElementById('results-panel-title').textContent = 'Search Results';
+
+  currentFilter = 'all';
+  syncFilterButtons();
+  setPanelExpanded('input-panel', true);
+
+  if (!opts.silent) setStatus('Search cleared.', 'info', 2000);
+}
+
+function openResetModal()  { document.getElementById('reset-modal').classList.add('visible'); }
+function closeResetModal() { document.getElementById('reset-modal').classList.remove('visible'); }
+
+function confirmReset() {
+  closeResetModal();
+  clearSearch({ silent: true });
+  allLists = [];
+  document.getElementById('lists-panel').classList.add('hidden');
+  document.getElementById('bl-output').value  = '';
+  document.getElementById('tcg-output').value = '';
+  document.getElementById('lists-summary-row').innerHTML = '';
+  setStatus('Reset complete.', 'info');
+}
+
+/* ==========================================================================
+   UI HELPERS
+   ========================================================================== */
+let _toastTimer = null;
+
+function setStatus(msg, type = 'info', duration) {
+  const container = document.getElementById('toast-container');
+  container.innerHTML = '';
+  if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
+
+  const icon = type === 'success' ? '✓' : type === 'error' ? '!' : '🔮';
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML =
+    `<span class="toast-icon">${icon}</span>` +
+    `<span class="toast-msg">${msg}</span>` +
+    `<button class="toast-close" aria-label="Dismiss">✕</button>`;
+  toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('in')));
+
+  const ms = duration || (type === 'error' ? 6500 : 3600);
+  _toastTimer = setTimeout(() => {
+    toast.classList.remove('in');
+    setTimeout(() => toast.remove(), 350);
+  }, ms);
+}
+
+function showProgress(pct, label) {
+  document.getElementById('progress').classList.add('visible');
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = label;
+}
+function hideProgress() {
+  document.getElementById('progress').classList.remove('visible');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ==========================================================================
+   PANELS
+   ========================================================================== */
+function setPanelExpanded(id, expanded) {
+  const header = document.getElementById(id + '-header');
+  const body   = document.getElementById(id + '-body');
+  if (!header || !body) return;
+  header.setAttribute('aria-expanded', String(expanded));
+  body.hidden = !expanded;
+}
+
+function togglePanel(id) {
+  const header = document.getElementById(id + '-header');
+  if (!header) return;
+  setPanelExpanded(id, header.getAttribute('aria-expanded') !== 'true');
+}
+
+function openHelpModal()     { document.getElementById('help-modal').classList.add('visible'); }
+function closeHelpModal()    { document.getElementById('help-modal').classList.remove('visible'); }
+function openVersionModal()  { document.getElementById('version-modal').classList.add('visible'); }
+function closeVersionModal() { document.getElementById('version-modal').classList.remove('visible'); }
+
+/* ==========================================================================
+   GOOGLE PHOTOS HOVER PREVIEW  (unchanged behaviour, desktop only)
+   ========================================================================== */
+const GPHOTO_FUNC = '/api/gphoto';
+const _gphotoCache = {};   // shortUrl → lh3 URL | 'pending' | 'failed'
+
+function isGooglePhotosUrl(url) {
+  return !!url && (
+    url.includes('photos.app.goo.gl') ||
+    url.includes('photos.google.com') ||
+    url.includes('lh3.googleusercontent.com')
+  );
+}
+
+async function resolveGphotoUrl(shortUrl) {
+  const cached = _gphotoCache[shortUrl];
+  if (cached && cached !== 'pending') return cached === 'failed' ? null : cached;
+  _gphotoCache[shortUrl] = 'pending';
+  try {
+    const res = await fetch(`${GPHOTO_FUNC}?url=${encodeURIComponent(shortUrl)}`);
+    if (!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    if (data.image) { _gphotoCache[shortUrl] = data.image; return data.image; }
+    _gphotoCache[shortUrl] = 'failed';
+    return null;
+  } catch (e) {
+    _gphotoCache[shortUrl] = 'failed';
+    return null;
+  }
+}
+
+const _popup    = document.getElementById('thumb-popup');
+const _popupImg = document.getElementById('thumb-popup-img');
+let _popupTimeout = null;
+let _activeHoverUrl = null;
+
+async function showSheetUrlPopup(event, sheetUrl) {
+  clearTimeout(_popupTimeout);
+  if (!isGooglePhotosUrl(sheetUrl)) return;
+  _activeHoverUrl = sheetUrl;
+
+  const cached = _gphotoCache[sheetUrl];
+  if (cached === 'failed') return;
+  if (cached && cached !== 'pending') {
+    _popupImg.src = cached;
+    _popup.style.display = 'block';
+    movePopup(event);
+    return;
+  }
+
+  _popupImg.src = '';
+  _popup.style.display = 'block';
+  _popup.dataset.loading = '1';
+  movePopup(event);
+
+  const resolved = await resolveGphotoUrl(sheetUrl);
+  delete _popup.dataset.loading;
+  if (_activeHoverUrl !== sheetUrl) return;
+
+  if (resolved) { _popupImg.src = resolved; _popup.style.display = 'block'; }
+  else          { _popup.style.display = 'none'; }
+}
+
+function hideCardPopup() {
+  _activeHoverUrl = null;
+  _popupTimeout = setTimeout(() => { _popup.style.display = 'none'; }, 300);
+}
+
+_popup.addEventListener('mouseenter', () => clearTimeout(_popupTimeout));
+_popup.addEventListener('mouseleave', hideCardPopup);
+document.addEventListener('mousemove', e => {
+  if (_popup.style.display === 'block') movePopup(e);
+});
+
+function movePopup(e) {
+  const pw = 224, ph = 204;
+  let x = e.clientX + 16, y = e.clientY - ph / 2;
+  if (x + pw > window.innerWidth) x = e.clientX - pw - 16;
+  if (y < 8) y = 8;
+  if (y + ph > window.innerHeight) y = window.innerHeight - ph - 8;
+  _popup.style.left = x + 'px';
+  _popup.style.top  = y + 'px';
+}
+
+/* Attached after each render — skipped entirely on touch devices, where hover
+   previews can't happen and the listeners would just be dead weight. */
+function attachHoverPreviews() {
+  if (IS_TOUCH) return;
+  document.querySelectorAll('#results-tbody a.match-link').forEach(a => {
+    if (!isGooglePhotosUrl(a.href)) return;
+    const sheetUrl = a.href;
+    a.addEventListener('mouseenter', e => showSheetUrlPopup(e, sheetUrl));
+    a.addEventListener('mouseleave', hideCardPopup);
+  });
+}
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     FIREBASE AUTH + SAVED LISTS  (optional — app works fully without it)
+     ══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged }
+    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDDZXZsI-Z_o_bDX5nSMbnXKGm3MFpBfVc",
+    authDomain: "bl-search-b3b6a.firebaseapp.com",
+    projectId: "bl-search-b3b6a",
+    storageBucket: "bl-search-b3b6a.firebasestorage.app",
+    messagingSenderId: "941571479533",
+    appId: "1:941571479533:web:116d4f044f1677ead2f9e4"
+  };
+
+  const app      = initializeApp(firebaseConfig);
+  const auth     = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  let currentUser = null;
+
+  onAuthStateChanged(auth, user => {
+    currentUser = user;
+    if (user) {
+      document.getElementById('btn-signin').style.display = 'none';
+      document.getElementById('auth-user').style.display  = 'flex';
+      document.getElementById('auth-avatar').src = user.photoURL || '';
+      document.getElementById('auth-name').textContent = user.displayName || user.email;
+      document.getElementById('auth-note').style.display = 'none';
+      document.getElementById('btn-save-list').disabled  = false;
+      refreshSavedDropdown();
+    } else {
+      document.getElementById('btn-signin').style.display  = '';
+      document.getElementById('auth-user').style.display   = 'none';
+      document.getElementById('auth-note').style.display   = '';
+      document.getElementById('btn-save-list').disabled    = true;
+      document.getElementById('btn-delete-list').disabled  = true;
+      clearDropdown();
+    }
+  });
+
+  window.signIn = async () => {
+    try { await signInWithPopup(auth, provider); }
+    catch (e) { console.error(e); setStatus('Sign-in failed: ' + e.message, 'error'); }
+  };
+  window.signOut = async () => {
+    await fbSignOut(auth);
+    setStatus('Signed out.', 'info');
+  };
+
+  function storageKey() {
+    return currentUser ? `cardtools_lists_${currentUser.uid}` : null;
+  }
+  function loadAllSaved() {
+    const key = storageKey();
+    if (!key) return [];
+    try { return JSON.parse(localStorage.getItem(key) || '[]'); }
+    catch { return []; }
+  }
+  function saveAllSaved(lists) {
+    const key = storageKey();
+    if (key) localStorage.setItem(key, JSON.stringify(lists));
+  }
+
+  function refreshSavedDropdown() {
+    const sel = document.getElementById('saved-lists-dropdown');
+    const lists = loadAllSaved();
+    sel.innerHTML = '<option value="">— select a saved list —</option>';
+    lists.forEach((l, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${l.name}  (saved ${l.savedAt})`;
+      sel.appendChild(opt);
+    });
+    document.getElementById('btn-delete-list').disabled = true;
+  }
+
+  function clearDropdown() {
+    document.getElementById('saved-lists-dropdown').innerHTML =
+      '<option value="">— select a saved list —</option>';
+  }
+
+  window.saveCurrentLists = () => {
+    if (!currentUser)     { setStatus('Sign in to save lists.', 'error'); return; }
+    if (!allLists.length) { setStatus('No lists to save yet — create a list first.', 'error'); return; }
+
+    const latest = allLists[allLists.length - 1];
+    const saved  = loadAllSaved();
+    const entry  = { name: latest.name, bl: latest.bl, tcg: latest.tcg, savedAt: new Date().toLocaleString() };
+    const existing = saved.findIndex(l => l.name === latest.name);
+    if (existing >= 0) saved[existing] = entry;
+    else saved.unshift(entry);
+
+    saveAllSaved(saved);
+    refreshSavedDropdown();
+    setStatus(`Saved <strong>${latest.name}</strong>.`, 'success');
+  };
+
+  window.onSavedListSelect = () => {
+    const sel = document.getElementById('saved-lists-dropdown');
+    const idx = sel.value;
+    document.getElementById('btn-delete-list').disabled = (idx === '');
+    if (idx === '') return;
+
+    const entry = loadAllSaved()[parseInt(idx)];
+    if (!entry) return;
+
+    allLists.push({ name: entry.name, bl: entry.bl, tcg: entry.tcg });
+    renderLists(entry.name, entry.bl, entry.tcg);
+
+    const blTotal  = entry.bl.reduce((s, i) => s + i.qty, 0);
+    const tcgTotal = entry.tcg.length;
+    document.getElementById('lists-summary-row').innerHTML = `
+      <div class="stat stat-info"><span class="num">${blTotal}</span><span class="lbl">Total BL cards</span></div>
+      <div class="stat stat-violet"><span class="num">${tcgTotal}</span><span class="lbl">Total TCG cards</span></div>`;
+
+    setPanelExpanded('input-panel', false);
+    setPanelExpanded('results-panel', false);
+
+    document.getElementById('lists-panel').classList.remove('hidden');
+    document.getElementById('lists-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setStatus(`Loaded <strong>${entry.name}</strong> (saved ${entry.savedAt}).`, 'success');
+  };
+
+  window.deleteSavedList = () => {
+    const sel = document.getElementById('saved-lists-dropdown');
+    const idx = sel.value;
+    if (idx === '') return;
+
+    const saved = loadAllSaved();
+    const name  = saved[parseInt(idx)].name;
+    if (!confirm(`Delete saved list "${name}"?`)) return;
+
+    saved.splice(parseInt(idx), 1);
+    saveAllSaved(saved);
+    refreshSavedDropdown();
+    setStatus(`Deleted <strong>${name}</strong>.`, 'info');
+  };
+</script>
+
+</body>
+</html>
