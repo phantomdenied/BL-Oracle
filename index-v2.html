@@ -951,6 +951,87 @@ input[type="checkbox"] {
 .col-plain .match-strip { display: none; }
 /* Keep the name clear of the corner triangle */
 .col-holo .match-text, .col-foil .match-text { padding-left: 13px; }
+
+/* ── Print-type badge ──────────────────────────────────────────────────────
+   Standalone swatch of the same triangle used in the results table and the
+   help-modal legend. Used in the mobile card layout, where the corner strip
+   has nowhere to sit. Plain prints render nothing, exactly as on desktop.
+   ───────────────────────────────────────────────────────────────────────── */
+.print-badge {
+  width: 13px; height: 13px;
+  flex-shrink: 0;
+  clip-path: polygon(0 100%, 100% 100%, 100% 0);
+  border-radius: 1px;
+}
+.print-badge.col-plain { display: none; }
+.print-badge.col-holo {
+  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 40%, #c4b5fd 60%, #a78bfa 100%);
+}
+.print-badge.col-foil {
+  background: linear-gradient(135deg,
+    #9090ff 0%, #d0d0ff 12%, #70c8ff 22%, #c0c0ff 32%,
+    #ff90c8 42%, #d0d0ff 52%, #70eebb 62%,
+    #c0c0ff 72%, #a090ff 82%, #d8d8ff 90%, #9090ff 100%);
+  background-size: 300% 300%;
+  animation: foilShimmer 4.5s ease-in-out infinite;
+  filter: brightness(0.97) contrast(1.2) saturate(1.5);
+}
+
+/* ── Tap-to-preview overlay (touch devices) ───────────────────────────────── */
+.peek-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(8,7,14,0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.peek-overlay.visible { display: flex; opacity: 1; }
+.peek-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 10px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: scale(0.96);
+  transition: transform 0.26s var(--ease-out);
+}
+.peek-overlay.visible .peek-card { transform: none; }
+.peek-card img {
+  max-width: 100%;
+  max-height: 60vh;
+  border-radius: var(--r-sm);
+  display: block;
+  background: var(--surface-inset);
+}
+.peek-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  padding: 0 4px 2px;
+}
+.peek-loading {
+  width: 220px; height: 200px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.peek-fail {
+  width: 220px; padding: 30px 16px;
+  text-align: center; font-size: 12.5px; color: var(--text-faint);
+}
 .col-holo .match-strip {
   width: 22px; height: 22px;
   background: linear-gradient(135deg, #a78bfa 0%, #818cf8 40%, #c4b5fd 60%, #a78bfa 100%);
@@ -1021,6 +1102,20 @@ input[type="checkbox"] {
   .rc-row input[type="checkbox"] { flex-shrink: 0; width: 19px; height: 19px; }
   .rc-label { flex: 1; min-width: 0; font-size: 12.5px; word-break: break-word; }
   .rc-label a { color: var(--accent); text-decoration: none; }
+
+  /* Tap-to-preview button — the touch equivalent of the desktop hover preview.
+     Only rendered for matches that carry a Google Photos link. */
+  .rc-peek {
+    width: 34px; height: 34px;
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    border-radius: var(--r-sm);
+    background: var(--surface-3);
+    color: var(--text-muted);
+    transition: background 0.16s var(--ease), color 0.16s var(--ease);
+  }
+  .rc-peek:active { background: var(--accent); color: var(--accent-ink); }
+  .rc-peek svg { width: 16px; height: 16px; }
   .rc-empty { padding: 11px 12px; font-size: 12.5px; color: var(--text-faint); font-style: italic; }
 }
 
@@ -1957,6 +2052,14 @@ code {
   <img id="thumb-popup-img" src="" alt="">
 </div>
 
+<!-- Tap-to-preview overlay (touch devices) -->
+<div class="peek-overlay" id="peek-overlay" role="dialog" aria-modal="true" aria-label="Card preview">
+  <div class="peek-card">
+    <div id="peek-body"></div>
+    <div class="peek-name" id="peek-name"></div>
+  </div>
+</div>
+
 <script>
 /* ==========================================================================
    GAME CONFIGS
@@ -2249,8 +2352,12 @@ window.addEventListener('DOMContentLoaded', () => {
     if (e.key !== 'Escape') return;
     closeTcgMenu();
     closeMoreMenu();
+    closePeek();
     document.querySelectorAll('.modal-overlay.visible').forEach(m => m.classList.remove('visible'));
   });
+
+  /* Tap anywhere on the preview overlay to dismiss it */
+  document.getElementById('peek-overlay').addEventListener('click', closePeek);
 
   /* ── Click the backdrop to dismiss a modal ── */
   document.querySelectorAll('.modal-overlay[data-dismiss]').forEach(overlay => {
@@ -2688,10 +2795,28 @@ function renderResults(filter) {
         const label = match.url
           ? `<a href="${esc(match.url)}" target="_blank" rel="noopener">${esc(match.value)}</a>`
           : esc(match.value);
-        cardHtml += `<label class="rc-row ${isExact ? 'is-ok' : 'is-warn'}">
-            <input type="checkbox" ${checked} onchange="toggleCheck(${ri},${globalIdx},this)">
+        const colClass  = getColClass(match.col);
+        const printName = colClass === 'col-foil' ? 'Foil print'
+                        : colClass === 'col-holo' ? 'Hologram print' : '';
+        const badge = printName
+          ? `<span class="print-badge ${colClass}" role="img" aria-label="${printName}" title="${printName}"></span>`
+          : '';
+        // Tap-to-preview, shown only where the sheet has a Google Photos link
+        const peek = isGooglePhotosUrl(match.url)
+          ? `<button type="button" class="rc-peek" data-peek="${esc(match.url)}" data-peek-name="${esc(match.value)}" aria-label="Preview ${esc(match.value)}">
+               <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                 <rect x="1.6" y="3" width="12.8" height="10" rx="1.8" stroke="currentColor" stroke-width="1.4"/>
+                 <circle cx="5.9" cy="6.6" r="1.3" fill="currentColor"/>
+                 <path d="M2.4 11.4l3.4-3 2.5 2.2 2.3-2 3 2.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+               </svg>
+             </button>`
+          : '';
+        cardHtml += `<div class="rc-row ${isExact ? 'is-ok' : 'is-warn'}">
+            <input type="checkbox" ${checked} aria-label="Select ${esc(match.value)}" onchange="toggleCheck(${ri},${globalIdx},this)">
+            ${badge}
             <span class="rc-label">${label}</span>
-          </label>`;
+            ${peek}
+          </div>`;
       });
       cardHtml += '</div>';
     }
@@ -3153,8 +3278,9 @@ function movePopup(e) {
   _popup.style.top  = y + 'px';
 }
 
-/* Attached after each render — skipped entirely on touch devices, where hover
-   previews can't happen and the listeners would just be dead weight. */
+/* Desktop: cursor-following hover preview, as in v1. Touch devices get the
+   explicit tap-to-preview button instead (see openPeek below) — relying on
+   iOS synthesising mouseenter from a tap was never dependable. */
 function attachHoverPreviews() {
   if (IS_TOUCH) return;
   document.querySelectorAll('#results-tbody a.match-link').forEach(a => {
@@ -3164,6 +3290,51 @@ function attachHoverPreviews() {
     a.addEventListener('mouseleave', hideCardPopup);
   });
 }
+
+/* ── Tap-to-preview (touch) ─────────────────────────────────────────────── */
+async function openPeek(sheetUrl, name) {
+  const overlay = document.getElementById('peek-overlay');
+  const body    = document.getElementById('peek-body');
+  document.getElementById('peek-name').textContent = name || '';
+  body.innerHTML = '<div class="peek-loading"></div>';
+  overlay.classList.add('visible');
+
+  const resolved = await resolveGphotoUrl(sheetUrl);
+  if (!overlay.classList.contains('visible')) return;   // dismissed while loading
+
+  if (resolved) {
+    const img = new Image();
+    img.alt = name || '';
+    img.onerror = () => { body.innerHTML = '<div class="peek-fail">Couldn\'t load that image.</div>'; };
+    img.src = resolved;
+    body.innerHTML = '';
+    body.appendChild(img);
+  } else {
+    body.innerHTML = '<div class="peek-fail">No preview available for this copy.</div>';
+  }
+}
+
+function closePeek() {
+  document.getElementById('peek-overlay').classList.remove('visible');
+}
+
+/* Delegated so it survives every re-render */
+document.addEventListener('click', e => {
+  const peekBtn = e.target.closest('.rc-peek');
+  if (peekBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    openPeek(peekBtn.dataset.peek, peekBtn.dataset.peekName);
+    return;
+  }
+  // Tapping anywhere on a result row toggles its checkbox, except on the
+  // sheet link or the preview button.
+  const row = e.target.closest('.rc-row');
+  if (row && !e.target.closest('a') && e.target.tagName !== 'INPUT') {
+    const cb = row.querySelector('input[type="checkbox"]');
+    if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
+  }
+});
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════
