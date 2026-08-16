@@ -7,3 +7,12 @@
   from = "/api/decks"
   to = "/.netlify/functions/decks"
   status = 200
+
+# Serve v2 at the site root. This is a rewrite (status 200), not a redirect,
+# so the URL stays clean and v1 is left completely untouched on disk —
+# still reachable at /index.html. Delete this block to go back to v1.
+[[redirects]]
+  from = "/"
+  to = "/index-v2.html"
+  status = 200
+  force = true
