@@ -2113,11 +2113,10 @@ code {
 <script>
 /* ==========================================================================
    GAME CONFIGS
-   Unchanged from v1 — including the YGO / One Piece sheets, which are
-   currently returning a permissions error. That is a known, out-of-scope issue:
-   the fix requires the sheet owner, so those data sources are left as-is.
    The Pokémon sheet's tab was renamed/reorganized on the sheet owner's side —
    it now points at the "EN&zh Single" tab (English + Chinese only).
+   YGO and One Piece moved to their own spreadsheet (separate from Pokémon),
+   fixing the old permissions error — same tab names, new sheetId.
    ========================================================================== */
 const API_KEY = 'AIzaSyCqy7lcMkyRsc9eVzOEbEpOIen0Ryroi7s';
 
@@ -2163,7 +2162,7 @@ const GAME_CONFIGS = {
     label:      'Yu-Gi-Oh!',
     short:      'YGO',
     tagline:    'Singles inventory',
-    sheetId:    '1p-6RCADLI0KvRstxEEG8oTZdLXzDc-PSY_rDv-0f-44',
+    sheetId:    '1G8wdhFvKerW7C8fREKHCYXM9diTLmA8uUt4llmVmk9g',
     sheetName:  'YGO',
     range:      'A1:F10000',
     skipRows:   4,   // rows 1-4 are headers
@@ -2181,7 +2180,7 @@ const GAME_CONFIGS = {
     label:      'One Piece',
     short:      'OP',
     tagline:    'Singles inventory',
-    sheetId:    '1p-6RCADLI0KvRstxEEG8oTZdLXzDc-PSY_rDv-0f-44',
+    sheetId:    '1G8wdhFvKerW7C8fREKHCYXM9diTLmA8uUt4llmVmk9g',
     sheetName:  'ONE PIECE',
     range:      'A1:F10000',
     skipRows:   6,   // rows 1-6 are headers
