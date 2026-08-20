@@ -1056,6 +1056,21 @@ input[type="checkbox"] {
 }
 .browse-peek.is-loading svg { display: none; }
 
+.browse-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.browse-pager:empty { display: none; }
+.browse-page-label {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* ── Tap-to-preview overlay (touch devices) ───────────────────────────────── */
 .peek-overlay {
   display: none;
@@ -1850,7 +1865,9 @@ code {
     </button>
     <div class="panel-body" id="browse-panel-body">
       <div class="stat-row" id="browse-summary-row"></div>
+      <div class="browse-pager" id="browse-pager-top"></div>
       <div class="browse-list" id="browse-list"></div>
+      <div class="browse-pager" id="browse-pager-bottom"></div>
     </div>
   </section>
 
@@ -3023,7 +3040,7 @@ async function runBrowse() {
   document.getElementById('browse-panel').classList.remove('hidden');
   setPanelExpanded('browse-panel', true);
 
-  await renderBrowse();
+  renderBrowse();
 
   setTimeout(() => {
     document.getElementById('browse-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3059,15 +3076,19 @@ function browseRowHtml(entry) {
   </div>`;
 }
 
-/* Renders in chunks, yielding to the browser between each one — dumping a
-   full multi-thousand-row inventory into innerHTML in one shot is what was
-   freezing this on iPhone Safari. */
-let _browseRun = 0;
+/* Paginated — only one page's worth of rows ever sits in the DOM at once.
+   Chunked-but-still-render-everything was still too much for iPhone Safari
+   on a multi-thousand-row inventory. */
+const BROWSE_PAGE_SIZE = 100;
+let browseSorted = [];
+let browsePage   = 1;
 
-async function renderBrowse() {
-  const run = ++_browseRun;
+function totalBrowsePages() {
+  return Math.max(1, Math.ceil(browseSorted.length / BROWSE_PAGE_SIZE));
+}
 
-  const sorted = [...singlesData].sort((a, b) => {
+function renderBrowse() {
+  browseSorted = [...singlesData].sort((a, b) => {
     if (a.isNew !== b.isNew) return a.isNew ? -1 : 1;
     if (a.isNew) {
       const byDate = parseNewDate(b.newDate) - parseNewDate(a.newDate);
@@ -3076,32 +3097,36 @@ async function renderBrowse() {
     return a.valueLower.localeCompare(b.valueLower);
   });
 
-  const newCount = sorted.filter(e => e.isNew).length;
-  document.getElementById('browse-summary-row').innerHTML = `<div class="stat stat-info"><span class="num">${sorted.length}</span><span class="lbl">card${sorted.length !== 1 ? 's' : ''}</span></div>` +
+  const newCount = browseSorted.filter(e => e.isNew).length;
+  document.getElementById('browse-summary-row').innerHTML = `<div class="stat stat-info"><span class="num">${browseSorted.length}</span><span class="lbl">card${browseSorted.length !== 1 ? 's' : ''}</span></div>` +
     (newCount ? `<div class="stat stat-violet"><span class="num">${newCount}</span><span class="lbl">new</span></div>` : '');
 
-  const list = document.getElementById('browse-list');
-  list.innerHTML = '';
+  browsePage = 1;
+  renderBrowsePage();
+}
 
-  if (!sorted.length) {
-    list.innerHTML = emptyBlock();
-    return;
-  }
+function goToBrowsePage(page) {
+  browsePage = Math.min(Math.max(1, page), totalBrowsePages());
+  renderBrowsePage();
+  document.getElementById('browse-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
-  const CHUNK = 150;
-  showProgress(0, 'Rendering cards…');
-  for (let i = 0; i < sorted.length; i += CHUNK) {
-    if (run !== _browseRun) return; // superseded by a newer browse/game switch
-    const chunk = sorted.slice(i, i + CHUNK);
-    list.insertAdjacentHTML('beforeend', chunk.map(browseRowHtml).join(''));
-    showProgress(
-      Math.min(100, Math.round(((i + CHUNK) / sorted.length) * 100)),
-      `Rendering ${Math.min(i + CHUNK, sorted.length)} of ${sorted.length}…`
-    );
-    await sleep(0);
-  }
-  hideProgress();
-  if (run !== _browseRun) return;
+function renderBrowsePage() {
+  const total = totalBrowsePages();
+  const start = (browsePage - 1) * BROWSE_PAGE_SIZE;
+  const pageItems = browseSorted.slice(start, start + BROWSE_PAGE_SIZE);
+
+  document.getElementById('browse-list').innerHTML = pageItems.length
+    ? pageItems.map(browseRowHtml).join('')
+    : emptyBlock();
+
+  const pagerHtml = total > 1 ? `
+    <button type="button" class="btn btn-ghost btn-sm" onclick="goToBrowsePage(${browsePage - 1})" ${browsePage <= 1 ? 'disabled' : ''}>‹ Prev</button>
+    <span class="browse-page-label">Page ${browsePage} of ${total}</span>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="goToBrowsePage(${browsePage + 1})" ${browsePage >= total ? 'disabled' : ''}>Next ›</button>
+  ` : '';
+  document.getElementById('browse-pager-top').innerHTML    = pagerHtml;
+  document.getElementById('browse-pager-bottom').innerHTML = pagerHtml;
 
   attachHoverPreviews();
   _imageRun++;
@@ -3372,10 +3397,13 @@ function clearSearch(opts = {}) {
   const moreDeselect = document.getElementById('more-deselect');
   if (moreDeselect) moreDeselect.disabled = true;
   document.getElementById('results-panel-title').textContent = 'Search Results';
-  _browseRun++; // cancel any in-flight chunked browse render
+  browseSorted = [];
+  browsePage   = 1;
   document.getElementById('browse-panel').classList.add('hidden');
   document.getElementById('browse-list').innerHTML = '';
   document.getElementById('browse-summary-row').innerHTML = '';
+  document.getElementById('browse-pager-top').innerHTML = '';
+  document.getElementById('browse-pager-bottom').innerHTML = '';
 
   currentFilter = 'all';
   syncFilterButtons();
