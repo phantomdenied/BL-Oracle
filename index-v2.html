@@ -1071,6 +1071,34 @@ input[type="checkbox"] {
   white-space: nowrap;
 }
 
+.browse-seg { margin-bottom: 13px; flex-wrap: wrap; }
+
+.browse-letters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 13px;
+}
+.browse-letters button {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+.browse-letters button:hover:not(:disabled) { color: var(--text); background: var(--surface-3); }
+.browse-letters button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.browse-letters button:disabled { opacity: 0.32; cursor: default; }
+
 /* ── Tap-to-preview overlay (touch devices) ───────────────────────────────── */
 .peek-overlay {
   display: none;
@@ -1865,6 +1893,8 @@ code {
     </button>
     <div class="panel-body" id="browse-panel-body">
       <div class="stat-row" id="browse-summary-row"></div>
+      <div class="seg browse-seg hidden" id="browse-print-filter" role="group" aria-label="Filter by print type"></div>
+      <div class="browse-letters" id="browse-letters" role="group" aria-label="Jump to letter"></div>
       <div class="browse-pager" id="browse-pager-top"></div>
       <div class="browse-list" id="browse-list"></div>
       <div class="browse-pager" id="browse-pager-bottom"></div>
@@ -3080,15 +3110,89 @@ function browseRowHtml(entry) {
    Chunked-but-still-render-everything was still too much for iPhone Safari
    on a multi-thousand-row inventory. */
 const BROWSE_PAGE_SIZE = 100;
-let browseSorted = [];
-let browsePage   = 1;
+let browseSorted       = [];
+let browsePage         = 1;
+let browsePrintFilter  = 'all'; // all | new | plain | holo | foil
+let browseLetter       = 'all'; // all | # | A..Z
 
 function totalBrowsePages() {
   return Math.max(1, Math.ceil(browseSorted.length / BROWSE_PAGE_SIZE));
 }
 
-function renderBrowse() {
-  browseSorted = [...singlesData].sort((a, b) => {
+function matchesPrintFilter(entry, filter) {
+  if (filter === 'all') return true;
+  if (filter === 'new') return entry.isNew;
+  const colClass = getColClass(entry.col);
+  if (filter === 'plain') return colClass === 'col-plain';
+  if (filter === 'holo')  return colClass === 'col-holo';
+  if (filter === 'foil')  return colClass === 'col-foil';
+  return true;
+}
+
+function entryLetter(entry) {
+  const ch = (entry.value || '').trim().charAt(0).toUpperCase();
+  return ch >= 'A' && ch <= 'Z' ? ch : '#';
+}
+
+/* Only worth showing when the game's sheet actually has that distinction —
+   Pokémon/YGO/One Piece have no new-cards section or holo/foil columns, so
+   every card there is trivially "Normal" and the bar would be pointless. */
+function buildBrowsePrintFilterBar() {
+  const cfg = GAME_CONFIGS[currentGame];
+  const options = [{ key: 'all', label: 'All' }];
+  if (cfg.newCardsPattern)     options.push({ key: 'new',   label: 'New' });
+  options.push({ key: 'plain', label: 'Normal' });
+  if (cfg.modestCols?.length)  options.push({ key: 'holo',  label: 'Holo' });
+  if (cfg.blingedCols?.length) options.push({ key: 'foil',  label: 'Foil' });
+
+  const bar = document.getElementById('browse-print-filter');
+  if (options.length <= 2) {
+    bar.innerHTML = '';
+    bar.classList.add('hidden');
+    return;
+  }
+  if (!options.some(o => o.key === browsePrintFilter)) browsePrintFilter = 'all';
+  bar.classList.remove('hidden');
+  bar.innerHTML = options.map(o =>
+    `<button type="button" data-print="${o.key}" aria-pressed="${o.key === browsePrintFilter}" onclick="setBrowsePrintFilter('${o.key}')">${esc(o.label)}</button>`
+  ).join('');
+}
+
+function syncBrowsePrintButtons() {
+  document.querySelectorAll('#browse-print-filter button[data-print]').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.print === browsePrintFilter));
+  });
+}
+
+function setBrowsePrintFilter(key) {
+  browsePrintFilter = key;
+  applyBrowseFilters();
+}
+
+function setBrowseLetter(letter) {
+  browseLetter = letter;
+  applyBrowseFilters();
+}
+
+const BROWSE_LETTERS = ['#', ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i))];
+
+function buildBrowseLetterBar(printFiltered) {
+  const present = new Set(printFiltered.map(entryLetter));
+  const bar = document.getElementById('browse-letters');
+  bar.innerHTML =
+    `<button type="button" data-letter="all" aria-pressed="${browseLetter === 'all'}" onclick="setBrowseLetter('all')">All</button>` +
+    BROWSE_LETTERS.map(l =>
+      `<button type="button" data-letter="${l}" aria-pressed="${browseLetter === l}" ${present.has(l) ? '' : 'disabled'} onclick="setBrowseLetter('${l}')">${l}</button>`
+    ).join('');
+}
+
+function applyBrowseFilters() {
+  const printFiltered = singlesData.filter(e => matchesPrintFilter(e, browsePrintFilter));
+  const filtered = browseLetter === 'all'
+    ? printFiltered
+    : printFiltered.filter(e => entryLetter(e) === browseLetter);
+
+  browseSorted = [...filtered].sort((a, b) => {
     if (a.isNew !== b.isNew) return a.isNew ? -1 : 1;
     if (a.isNew) {
       const byDate = parseNewDate(b.newDate) - parseNewDate(a.newDate);
@@ -3101,8 +3205,16 @@ function renderBrowse() {
   document.getElementById('browse-summary-row').innerHTML = `<div class="stat stat-info"><span class="num">${browseSorted.length}</span><span class="lbl">card${browseSorted.length !== 1 ? 's' : ''}</span></div>` +
     (newCount ? `<div class="stat stat-violet"><span class="num">${newCount}</span><span class="lbl">new</span></div>` : '');
 
+  syncBrowsePrintButtons();
+  buildBrowseLetterBar(printFiltered);
+
   browsePage = 1;
   renderBrowsePage();
+}
+
+function renderBrowse() {
+  buildBrowsePrintFilterBar();
+  applyBrowseFilters();
 }
 
 function goToBrowsePage(page) {
@@ -3397,11 +3509,16 @@ function clearSearch(opts = {}) {
   const moreDeselect = document.getElementById('more-deselect');
   if (moreDeselect) moreDeselect.disabled = true;
   document.getElementById('results-panel-title').textContent = 'Search Results';
-  browseSorted = [];
-  browsePage   = 1;
+  browseSorted      = [];
+  browsePage        = 1;
+  browsePrintFilter = 'all';
+  browseLetter      = 'all';
   document.getElementById('browse-panel').classList.add('hidden');
   document.getElementById('browse-list').innerHTML = '';
   document.getElementById('browse-summary-row').innerHTML = '';
+  document.getElementById('browse-print-filter').innerHTML = '';
+  document.getElementById('browse-print-filter').classList.add('hidden');
+  document.getElementById('browse-letters').innerHTML = '';
   document.getElementById('browse-pager-top').innerHTML = '';
   document.getElementById('browse-pager-bottom').innerHTML = '';
 
