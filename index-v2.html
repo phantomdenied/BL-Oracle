@@ -987,6 +987,71 @@ input[type="checkbox"] {
   filter: brightness(1.02) contrast(1.1) saturate(1.15);
 }
 
+/* ==========================================================================
+   BROWSE VIEW — flat list of every card in the sheet, newest first.
+   Self-contained (not viewport-gated like the search results table/cards)
+   so it looks the same on desktop and mobile.
+   ========================================================================== */
+.browse-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.browse-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.browse-row:last-child { border-bottom: none; }
+.browse-row.is-new { background: color-mix(in srgb, var(--violet-bg) 40%, transparent); }
+.browse-name-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.browse-name-wrap.has-print { padding-left: 15px; }
+.browse-label {
+  position: relative; z-index: 1;
+  display: block;
+  font-size: 13px;
+  word-break: break-word;
+}
+.browse-label a { color: var(--accent); text-decoration: none; }
+.browse-label a:hover { text-decoration: underline; }
+.pill-new { background: var(--violet-bg); color: var(--violet-fg); flex-shrink: 0; }
+
+/* Reuses the .rc-peek class (so the existing tap-to-preview / bulk image
+   logic picks it up for free) with its own always-on visual rules, since
+   .rc-peek itself is only styled inside the mobile results media query. */
+.browse-peek {
+  width: 34px; height: 34px;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--text-muted);
+  overflow: hidden;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease),
+              width 0.2s var(--ease), height 0.2s var(--ease);
+}
+.browse-peek:active { background: var(--accent); color: var(--accent-ink); }
+.browse-peek svg { width: 16px; height: 16px; }
+.browse-peek.has-img { width: 46px; height: 64px; background: var(--surface-inset); padding: 0; }
+.browse-peek.has-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.browse-peek.is-loading {
+  width: 46px; height: 64px;
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+.browse-peek.is-loading svg { display: none; }
+
 /* ── Tap-to-preview overlay (touch devices) ───────────────────────────────── */
 .peek-overlay {
   display: none;
@@ -1771,6 +1836,20 @@ code {
     </div>
   </section>
 
+  <!-- ═══ Browse panel ═══ -->
+  <section class="panel hidden" id="browse-panel">
+    <button class="panel-header" id="browse-panel-header" aria-expanded="true" aria-controls="browse-panel-body" onclick="togglePanel('browse-panel')">
+      <span class="panel-title"><span class="panel-dot"></span><span class="panel-title-text" id="browse-panel-title">Browse All Cards</span></span>
+      <span class="panel-chevron" aria-hidden="true">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </button>
+    <div class="panel-body" id="browse-panel-body">
+      <div class="stat-row" id="browse-summary-row"></div>
+      <div class="browse-list" id="browse-list"></div>
+    </div>
+  </section>
+
   <!-- ═══ Generated lists panel ═══ -->
   <section class="panel hidden" id="lists-panel">
     <button class="panel-header" id="lists-panel-header" aria-expanded="true" aria-controls="lists-panel-body" onclick="togglePanel('lists-panel')">
@@ -1848,6 +1927,9 @@ code {
     </svg>
     <span class="label">Search</span>
   </button>
+  <button class="btn btn-overflowable" id="btn-browse" onclick="runBrowse()">
+    <span class="label">Browse All</span>
+  </button>
   <button class="btn btn-solid" id="btn-create" onclick="openNamePrompt()" disabled>
     <span class="label">Create Lists</span>
   </button>
@@ -1868,6 +1950,7 @@ code {
       </svg>
     </button>
     <div class="more-menu" id="more-menu" role="menu">
+      <button role="menuitem" onclick="runBrowse(); closeMoreMenu()">📖 Browse All Cards</button>
       <button role="menuitem" id="more-deselect" onclick="deselectAll(); closeMoreMenu()" disabled>☐ Deselect All</button>
       <button role="menuitem" onclick="clearSearch(); closeMoreMenu()">✕ Clear Search</button>
       <button role="menuitem" onclick="openResetModal(); closeMoreMenu()">⟳ Reset Everything</button>
@@ -2129,7 +2212,11 @@ const GAME_CONFIGS = {
     sheetName:  'SINGLES',
     range:      'A1:F10000',
     skipRows:   3,   // skip rows 0,1,2 (purchase link, headers, notes)
-    skipWords:  ['commander','deck','maybe','sideboard','new cards','stock'],
+    skipWords:  ['commander','deck','maybe','sideboard','new cards','stock','holo cards','foil cards','new updated cards','stocks'],
+    // Section header like "8.18 NEW Updates" — everything below it in that
+    // column is a recent addition, tagged with the captured date, until the
+    // next header (another date, or a skipWord) resets the column's state.
+    newCardsPattern: /^(\d{1,2}\.\d{1,2})\s+new\s+updates?$/i,
     checkStrikethrough: false,
     // col groups for auto-pick (0-indexed): modest=C,D; blinged=E,F
     modestCols:  [2, 3],
@@ -2568,6 +2655,7 @@ async function fetchSheetData(cfg) {
 
 function parseSingles(rows, cfg) {
   singlesData = [];
+  const colNewState = {}; // col index -> { date } while inside a "new" section, absent otherwise
   for (let r = cfg.skipRows; r < rows.length; r++) {
     const row = rows[r];
     for (let c = 0; c < row.length; c++) {
@@ -2576,8 +2664,24 @@ function parseSingles(rows, cfg) {
       const val = (cell.value || '').trim();
       if (!val) continue;
       const lower = val.toLowerCase();
-      if (cfg.skipWords.some(w => lower === w)) continue;
-      singlesData.push({ value: val, valueLower: lower, col: c, url: cell.url || null });
+
+      if (cfg.newCardsPattern) {
+        const dateMatch = val.match(cfg.newCardsPattern);
+        if (dateMatch) {
+          colNewState[c] = { date: dateMatch[1] };
+          continue; // section header, not a card
+        }
+      }
+      if (cfg.skipWords.some(w => lower === w)) {
+        delete colNewState[c]; // section header — leaves the "new" run for this column
+        continue;
+      }
+
+      const newState = colNewState[c];
+      singlesData.push({
+        value: val, valueLower: lower, col: c, url: cell.url || null,
+        isNew: !!newState, newDate: newState ? newState.date : null,
+      });
     }
   }
 }
@@ -2894,6 +2998,81 @@ function emptyBlock() {
   </div>`;
 }
 
+/* ==========================================================================
+   BROWSE — lists every card in the sheet, no search needed. "New" cards
+   (MTG only — flagged via cfg.newCardsPattern in parseSingles) sort first,
+   most recently added date first.
+   ========================================================================== */
+function parseNewDate(dateStr) {
+  const [m, d] = dateStr.split('.').map(Number);
+  return m * 100 + (d || 0);
+}
+
+async function runBrowse() {
+  if (!singlesLoaded) {
+    await loadSingles(false);
+    if (!singlesLoaded) return;
+  }
+
+  setPanelExpanded('input-panel', false);
+  document.getElementById('results-panel').classList.add('hidden');
+  renderBrowse();
+  document.getElementById('browse-panel').classList.remove('hidden');
+  setPanelExpanded('browse-panel', true);
+
+  setTimeout(() => {
+    document.getElementById('browse-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function renderBrowse() {
+  const sorted = [...singlesData].sort((a, b) => {
+    if (a.isNew !== b.isNew) return a.isNew ? -1 : 1;
+    if (a.isNew) {
+      const byDate = parseNewDate(b.newDate) - parseNewDate(a.newDate);
+      if (byDate !== 0) return byDate;
+    }
+    return a.valueLower.localeCompare(b.valueLower);
+  });
+
+  const newCount = sorted.filter(e => e.isNew).length;
+  document.getElementById('browse-summary-row').innerHTML = `<div class="stat stat-info"><span class="num">${sorted.length}</span><span class="lbl">card${sorted.length !== 1 ? 's' : ''}</span></div>` +
+    (newCount ? `<div class="stat stat-violet"><span class="num">${newCount}</span><span class="lbl">new</span></div>` : '');
+
+  document.getElementById('browse-list').innerHTML = sorted.map(entry => {
+    const colClass  = getColClass(entry.col);
+    const printName = colClass === 'col-foil' ? 'Foil print' : colClass === 'col-holo' ? 'Hologram print' : '';
+    const printBadge = printName
+      ? `<span class="print-badge ${colClass}" role="img" aria-label="${printName}" title="${printName}"></span>`
+      : '';
+    const newBadge = entry.isNew
+      ? `<span class="pill pill-new" title="Added ${esc(entry.newDate)}">NEW · ${esc(entry.newDate)}</span>`
+      : '';
+    const label = entry.url
+      ? `<a class="browse-link" href="${esc(entry.url)}" target="_blank" rel="noopener">${esc(entry.value)}</a>`
+      : esc(entry.value);
+    const peek = isGooglePhotosUrl(entry.url)
+      ? `<button type="button" class="rc-peek browse-peek" data-peek="${esc(entry.url)}" data-peek-name="${esc(entry.value)}" aria-label="Preview ${esc(entry.value)}">
+           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+             <rect x="1.6" y="3" width="12.8" height="10" rx="1.8" stroke="currentColor" stroke-width="1.4"/>
+             <circle cx="5.9" cy="6.6" r="1.3" fill="currentColor"/>
+             <path d="M2.4 11.4l3.4-3 2.5 2.2 2.3-2 3 2.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+           </svg>
+         </button>`
+      : '';
+
+    return `<div class="browse-row${entry.isNew ? ' is-new' : ''}">
+      <span class="browse-name-wrap${printBadge ? ' has-print' : ''}">${printBadge}<span class="browse-label">${label}</span></span>
+      ${newBadge}
+      ${peek}
+    </div>`;
+  }).join('') || emptyBlock();
+
+  attachHoverPreviews();
+  _imageRun++;
+  if (imagesOn) loadRowImages();
+}
+
 function syncFilterButtons() {
   document.querySelectorAll('.seg button[data-filter]').forEach(b => {
     b.setAttribute('aria-pressed', String(b.dataset.filter === currentFilter));
@@ -3158,6 +3337,9 @@ function clearSearch(opts = {}) {
   const moreDeselect = document.getElementById('more-deselect');
   if (moreDeselect) moreDeselect.disabled = true;
   document.getElementById('results-panel-title').textContent = 'Search Results';
+  document.getElementById('browse-panel').classList.add('hidden');
+  document.getElementById('browse-list').innerHTML = '';
+  document.getElementById('browse-summary-row').innerHTML = '';
 
   currentFilter = 'all';
   syncFilterButtons();
@@ -3337,7 +3519,7 @@ function movePopup(e) {
    iOS synthesising mouseenter from a tap was never dependable. */
 function attachHoverPreviews() {
   if (IS_TOUCH) return;
-  document.querySelectorAll('#results-tbody a.match-link').forEach(a => {
+  document.querySelectorAll('#results-tbody a.match-link, #browse-list a.browse-link').forEach(a => {
     if (!isGooglePhotosUrl(a.href)) return;
     const sheetUrl = a.href;
     a.addEventListener('mouseenter', e => showSheetUrlPopup(e, sheetUrl));
