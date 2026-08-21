@@ -36,10 +36,4 @@ cp backup-2026-08-21/netlify/functions/decks.mjs netlify/functions/decks.mjs
 git checkout b83ff4938dfd880b00a65b04b95e6a32cacb8c09 -- index-v2.html index.html netlify.toml netlify/functions/gphoto.mjs netlify/functions/decks.mjs
 ```
 
-**Option C — git tag**, for a named reference to this exact point in history:
-
-```
-git checkout pre-redesign-2026-08-21 -- index-v2.html
-```
-
-Any of these gets you back to exactly what was live before the redesign. Commit the restored files and push to deploy the rollback.
+Both options get you back to exactly what was live before the redesign. Commit the restored files and push to deploy the rollback.
