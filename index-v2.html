@@ -231,9 +231,6 @@ a { color: var(--accent); }
    APP BAR — logo, TCG picker, theme toggle, auth
    ========================================================================== */
 .appbar {
-  background: color-mix(in srgb, var(--chrome-bg) 88%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
   color: var(--chrome-text);
   border-bottom: 1px solid var(--chrome-line);
   padding: 10px max(16px, env(safe-area-inset-left)) 10px max(16px, env(safe-area-inset-right));
@@ -243,6 +240,23 @@ a { color: var(--accent); }
   position: sticky;
   top: 0;
   z-index: 60;
+}
+/* The frosted-glass fill lives on ::before rather than directly on .appbar.
+   backdrop-filter on an element makes IT the containing block for any
+   position:fixed descendant — which broke the mobile TCG picker's bottom
+   sheet (position:fixed, anchored to the viewport) by making it anchor to
+   the app bar's own (short, pinned-to-top) box instead, pushing the menu
+   almost entirely off-screen. A pseudo-element carries the filter instead,
+   so .appbar itself stays filter-free and its fixed descendants still
+   anchor to the real viewport. */
+.appbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--chrome-bg) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  pointer-events: none;
   transition: background-color 0.35s var(--ease);
 }
 .appbar-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
