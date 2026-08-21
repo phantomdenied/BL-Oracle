@@ -253,6 +253,8 @@ a { color: var(--accent); }
   letter-spacing: 0.02em;
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .appbar-wordmark p {
   font-size: 10.5px;
@@ -430,6 +432,63 @@ a { color: var(--accent); }
 }
 .btn-signout:hover { background: rgba(255,255,255,0.16); color: var(--chrome-text); }
 
+/* ── Saved lists popover — was a permanent bar at the top of the page,
+   now a compact trigger next to the account controls, only shown once
+   signed in (matches the tcg-menu/more-menu popover pattern). ── */
+.lists-menu-wrap { position: relative; flex-shrink: 0; }
+#lists-menu-trigger[aria-expanded="true"] { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+.lists-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  padding: 14px;
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top right;
+  pointer-events: none;
+  transition: opacity 0.16s var(--ease), transform 0.18s var(--ease-out);
+}
+.lists-popover.open { opacity: 1; transform: none; pointer-events: auto; }
+.lists-popover-label {
+  font-size: 11.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 9px;
+}
+.lists-popover select {
+  width: 100%;
+  height: 38px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0 30px 0 11px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 8l3-3.5' fill='none' stroke='%238b91a4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 12px;
+}
+.lists-popover-actions { display: flex; gap: 8px; margin-top: 9px; }
+.lists-popover-actions .btn { flex: 1; height: 34px; }
+
+@media (max-width: 340px) {
+  /* Narrower than the popover's own width — let it hug the viewport
+     edge instead of overflowing off-screen. Stays position:absolute
+     (anchored to .lists-menu-wrap, not the viewport) rather than
+     position:fixed, since .appbar's position:sticky makes it a
+     containing block for fixed descendants and throws the math off. */
+  .lists-popover { width: calc(100vw - 20px); right: -10px; }
+}
+
 @media (max-width: 900px) {
   .appbar-wordmark p { display: none; }
   .auth-name { display: none; }
@@ -444,7 +503,10 @@ a { color: var(--accent); }
   .tcg-trigger-short { display: inline; }
   .tcg-trigger { padding: 0 9px; gap: 6px; }
 }
-@media (max-width: 400px) {
+@media (max-width: 480px) {
+  /* Signed-in state adds a 4th control (saved-lists trigger) to
+     appbar-tools — drop the decorative logo a bit earlier so the
+     wordmark and TCG picker never fight for the same space. */
   .appbar-brand svg.logo { display: none; }
 }
 
@@ -460,51 +522,9 @@ a { color: var(--accent); }
   gap: 16px;
 }
 
-/* ── Saved lists bar — the "top toolbar" ────────────────────────────────── */
-.savedbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 11px 14px;
-  box-shadow: var(--shadow-sm);
-}
-.savedbar-label {
-  font-size: 12px; font-weight: 650; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.05em;
-  white-space: nowrap;
-  display: flex; align-items: center; gap: 6px;
-}
-.savedbar select {
-  flex: 1 1 190px;
-  min-width: 0;
-  height: 38px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 0 32px 0 11px;
-  font-size: 13px;
-  color: var(--text);
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 8l3-3.5' fill='none' stroke='%238b91a4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 11px center;
-  background-size: 12px;
-  transition: border-color 0.18s var(--ease);
-}
-.savedbar select:hover { border-color: var(--border-strong); }
-.savedbar-note { font-size: 12px; color: var(--text-faint); }
-
-@media (max-width: 620px) {
-  .savedbar { flex-direction: column; align-items: stretch; gap: 8px; }
-  .savedbar select { flex: 1 1 auto; width: 100%; }
-  .savedbar-actions { display: flex; gap: 8px; }
-  .savedbar-actions .btn { flex: 1; justify-content: center; }
-}
+/* Saved lists used to live in a permanent bar here at the top of the page —
+   moved to a popover off the app bar (see .lists-menu-wrap), gated on
+   sign-in since it did nothing until then anyway. */
 
 /* ==========================================================================
    HERO BANNER — sits between the top toolbar and the content
@@ -1806,6 +1826,29 @@ code {
       <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       <span>Sign in</span>
     </button>
+    <span class="sr-only" id="auth-note">Sign in to save &amp; load lists</span>
+
+    <!-- Saved lists — a compact popover instead of a permanent top-of-page bar,
+         and only shown once signed in (it's non-functional until then). -->
+    <div class="lists-menu-wrap" id="lists-menu-wrap" style="display:none;">
+      <button class="theme-toggle" id="lists-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Saved lists" title="Saved lists">
+        <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2.5 3.2A1.7 1.7 0 0 1 4.2 1.5h5.4l4.4 4.4v6.9a1.7 1.7 0 0 1-1.7 1.7H4.2a1.7 1.7 0 0 1-1.7-1.7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+          <path d="M5.4 1.8v3.6h4.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="lists-popover" id="lists-popover">
+        <div class="lists-popover-label">Saved Lists</div>
+        <label class="sr-only" for="saved-lists-dropdown">Saved lists</label>
+        <select id="saved-lists-dropdown" onchange="onSavedListSelect()" aria-label="Saved lists">
+          <option value="">— select a saved list —</option>
+        </select>
+        <div class="lists-popover-actions">
+          <button class="btn btn-solid btn-sm" id="btn-save-list" onclick="saveCurrentLists()" disabled>Save current</button>
+          <button class="btn btn-danger btn-sm" id="btn-delete-list" onclick="deleteSavedList()" disabled>Delete</button>
+        </div>
+      </div>
+    </div>
 
     <div class="auth-user" id="auth-user" style="display:none;">
       <img id="auth-avatar" src="" alt="">
@@ -1816,25 +1859,6 @@ code {
 </header>
 
 <div class="container">
-
-  <!-- ═══ Saved lists (top toolbar row) ═══ -->
-  <div class="savedbar">
-    <span class="savedbar-label">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <path d="M2.5 3.2A1.7 1.7 0 0 1 4.2 1.5h5.4l4.4 4.4v6.9a1.7 1.7 0 0 1-1.7 1.7H4.2a1.7 1.7 0 0 1-1.7-1.7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-        <path d="M5.4 1.8v3.6h4.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-      </svg>
-      Saved Lists
-    </span>
-    <select id="saved-lists-dropdown" onchange="onSavedListSelect()" aria-label="Saved lists">
-      <option value="">— select a saved list —</option>
-    </select>
-    <div class="savedbar-actions" style="display:flex;gap:8px;">
-      <button class="btn btn-solid btn-sm" id="btn-save-list" onclick="saveCurrentLists()" disabled style="height:38px;">Save current</button>
-      <button class="btn btn-danger btn-sm" id="btn-delete-list" onclick="deleteSavedList()" disabled style="height:38px;">Delete</button>
-    </div>
-    <span class="savedbar-note" id="auth-note">Sign in to save &amp; load lists</span>
-  </div>
 
   <!-- ═══ Banner — now between the top toolbar and the content ═══ -->
   <section class="hero" id="hero" aria-labelledby="hero-title">
@@ -2592,9 +2616,11 @@ window.addEventListener('DOMContentLoaded', () => {
   /* ── TCG picker wiring ── */
   document.getElementById('tcg-trigger').addEventListener('click', toggleTcgMenu);
   document.getElementById('tcg-scrim').addEventListener('click', closeTcgMenu);
+  document.getElementById('lists-menu-trigger').addEventListener('click', toggleListsMenu);
   document.addEventListener('click', e => {
     if (!e.target.closest('#tcg')) closeTcgMenu();
     if (!e.target.closest('.more-wrap')) closeMoreMenu();
+    if (!e.target.closest('.lists-menu-wrap')) closeListsMenu();
   });
 
   /* ── Theme toggle ── */
@@ -2611,6 +2637,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (e.key !== 'Escape') return;
     closeTcgMenu();
     closeMoreMenu();
+    closeListsMenu();
     closePeek();
     document.querySelectorAll('.modal-overlay.visible').forEach(m => m.classList.remove('visible'));
   });
@@ -2710,6 +2737,16 @@ function toggleMoreMenu() {
 function closeMoreMenu() {
   document.getElementById('more-menu').classList.remove('open');
   document.getElementById('btn-more').setAttribute('aria-expanded', 'false');
+}
+
+function toggleListsMenu() {
+  const popover = document.getElementById('lists-popover');
+  const open = popover.classList.toggle('open');
+  document.getElementById('lists-menu-trigger').setAttribute('aria-expanded', String(open));
+}
+function closeListsMenu() {
+  document.getElementById('lists-popover').classList.remove('open');
+  document.getElementById('lists-menu-trigger').setAttribute('aria-expanded', 'false');
 }
 
 /* ==========================================================================
@@ -3942,6 +3979,7 @@ document.addEventListener('click', e => {
       document.getElementById('auth-name').textContent = user.displayName || user.email;
       document.getElementById('auth-note').style.display = 'none';
       document.getElementById('btn-save-list').disabled  = false;
+      document.getElementById('lists-menu-wrap').style.display = '';
       refreshSavedDropdown();
     } else {
       document.getElementById('btn-signin').style.display  = '';
@@ -3949,6 +3987,8 @@ document.addEventListener('click', e => {
       document.getElementById('auth-note').style.display   = '';
       document.getElementById('btn-save-list').disabled    = true;
       document.getElementById('btn-delete-list').disabled  = true;
+      document.getElementById('lists-menu-wrap').style.display = 'none';
+      closeListsMenu();
       clearDropdown();
     }
   });
