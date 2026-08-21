@@ -1,3 +1,11 @@
+<!--
+  BACKUP — 2026-08-21 — pre-redesign snapshot of index-v2.html
+  This is the file that was live at the site root (netlify.toml rewrites
+  "/" to index-v2.html) immediately before The Oracle's visual overhaul.
+  DO NOT EDIT THIS COPY. To roll back, copy this file over the live
+  index-v2.html (or `git checkout b83ff4938dfd880b00a65b04b95e6a32cacb8c09 -- index-v2.html`).
+  See backup-2026-08-21/README.md for full restore instructions.
+-->
 <!DOCTYPE html>
 <html lang="en" data-game="mtg">
 <head>
@@ -6,10 +14,6 @@
 <meta name="description" content="The Oracle — match your deck list against a live singles inventory across MTG, Pokémon, Yu-Gi-Oh! and One Piece.">
 <meta name="theme-color" content="#12101c">
 <title>The Oracle</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 /* ==========================================================================
@@ -21,13 +25,6 @@
    ========================================================================== */
 
 /* ── Game accents ───────────────────────────────────────────────────────── */
-/* Hero art is built from each game's own tokens — layered CSS gradients,
-   not photography. The old build hotlinked stock photos from unrelated
-   third-party sites (a Harvard blog, a sports-card forum, a print shop);
-   besides looking off-brand, that's a live liability — any of those hosts
-   can rename/delete the file or block hotlinking and the banner just goes
-   blank. Gradients render instantly, never 404, and use the game's exact
-   accent colors instead of an unrelated photo's palette. */
 html[data-game="mtg"] {
   --accent:          #7c3aed;
   --accent-strong:   #6d28d9;
@@ -36,9 +33,7 @@ html[data-game="mtg"] {
   --accent-wash:     rgba(124, 58, 237, 0.10);
   --accent-line:     rgba(124, 58, 237, 0.28);
   --accent-glow:     rgba(124, 58, 237, 0.35);
-  --banner-bg:       radial-gradient(125% 150% at 8% -15%, rgba(167,139,250,0.55), transparent 58%),
-                      radial-gradient(90% 130% at 105% 120%, rgba(109,40,217,0.60), transparent 55%),
-                      linear-gradient(135deg, #1c1236 0%, #140d29 55%, #0c0818 100%);
+  --banner-img:      url('https://d3.harvard.edu/platform-rctom/wp-content/uploads/sites/4/2016/11/mtg1-900x200.png');
   --game-name:       "Magic: The Gathering";
 }
 html[data-game="pkm"] {
@@ -49,9 +44,7 @@ html[data-game="pkm"] {
   --accent-wash:     rgba(225, 29, 72, 0.10);
   --accent-line:     rgba(225, 29, 72, 0.28);
   --accent-glow:     rgba(225, 29, 72, 0.35);
-  --banner-bg:       radial-gradient(125% 150% at 8% -15%, rgba(251,113,133,0.50), transparent 58%),
-                      radial-gradient(90% 130% at 105% 120%, rgba(190,18,60,0.62), transparent 55%),
-                      linear-gradient(135deg, #33121c 0%, #240d16 55%, #150810 100%);
+  --banner-img:      url('http://www.sportscardworld.com.au/wp-content/uploads/2023/07/68747470733a2f2f6372797374616c2d63646e322e6372797374616c636f6d6d657263652e636f6d2f70686f746f732f363333303536352f73706c61736842616e6e65725f706f6b656d6f6e2e6a7067.jpg');
   --game-name:       "Pokémon";
 }
 html[data-game="ygo"] {
@@ -62,9 +55,7 @@ html[data-game="ygo"] {
   --accent-wash:     rgba(180, 83, 9, 0.10);
   --accent-line:     rgba(180, 83, 9, 0.28);
   --accent-glow:     rgba(251, 191, 36, 0.35);
-  --banner-bg:       radial-gradient(125% 150% at 8% -15%, rgba(251,191,36,0.42), transparent 58%),
-                      radial-gradient(90% 130% at 105% 120%, rgba(146,64,14,0.65), transparent 55%),
-                      linear-gradient(135deg, #2c1c0a 0%, #1f1408 55%, #130c07 100%);
+  --banner-img:      url('https://aura-print.com/media/amasty/blog/cache/A/P/1920/350/AP-blog-header-Most-Valuable-Yugioh-Card.jpg');
   --game-name:       "Yu-Gi-Oh!";
 }
 html[data-game="op"] {
@@ -75,9 +66,7 @@ html[data-game="op"] {
   --accent-wash:     rgba(8, 145, 178, 0.10);
   --accent-line:     rgba(8, 145, 178, 0.28);
   --accent-glow:     rgba(8, 145, 178, 0.35);
-  --banner-bg:       radial-gradient(125% 150% at 8% -15%, rgba(103,232,249,0.45), transparent 58%),
-                      radial-gradient(90% 130% at 105% 120%, rgba(14,116,144,0.62), transparent 55%),
-                      linear-gradient(135deg, #0a222c 0%, #0a1a22 55%, #071015 100%);
+  --banner-img:      url('https://www.primegame.it/images/testate/onepiece_testata_gametrade.jpg');
   --game-name:       "One Piece";
 }
 /* Gold reads poorly as a solid fill on light surfaces — nudge it darker there,
@@ -180,7 +169,7 @@ html[data-game="ygo"][data-theme="dark"] {
 html { -webkit-text-size-adjust: 100%; }
 
 body {
-  font-family: "Manrope", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
                system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -195,7 +184,7 @@ body {
   transition: background-color 0.35s var(--ease), color 0.35s var(--ease);
 }
 
-h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.015em; line-height: 1.2; }
+h1, h2, h3, h4 { font-weight: 650; letter-spacing: -0.011em; line-height: 1.25; }
 
 button, input, select, textarea { font: inherit; color: inherit; }
 button { background: none; border: none; cursor: pointer; }
@@ -231,9 +220,7 @@ a { color: var(--accent); }
    APP BAR — logo, TCG picker, theme toggle, auth
    ========================================================================== */
 .appbar {
-  background: color-mix(in srgb, var(--chrome-bg) 88%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  background: var(--chrome-bg);
   color: var(--chrome-text);
   border-bottom: 1px solid var(--chrome-line);
   padding: 10px max(16px, env(safe-area-inset-left)) 10px max(16px, env(safe-area-inset-right));
@@ -253,8 +240,6 @@ a { color: var(--accent); }
   letter-spacing: 0.02em;
   font-weight: 600;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .appbar-wordmark p {
   font-size: 10.5px;
@@ -273,14 +258,14 @@ a { color: var(--accent); }
   display: flex;
   align-items: center;
   gap: 9px;
-  height: 40px;
-  padding: 0 12px;
+  height: 38px;
+  padding: 0 11px;
   border-radius: var(--r-md);
   background: var(--chrome-hover);
-  border: 1px solid color-mix(in srgb, var(--accent-light) 45%, transparent);
+  border: 1px solid var(--chrome-line);
   color: var(--chrome-text);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
   max-width: 62vw;
 }
@@ -432,63 +417,6 @@ a { color: var(--accent); }
 }
 .btn-signout:hover { background: rgba(255,255,255,0.16); color: var(--chrome-text); }
 
-/* ── Saved lists popover — was a permanent bar at the top of the page,
-   now a compact trigger next to the account controls, only shown once
-   signed in (matches the tcg-menu/more-menu popover pattern). ── */
-.lists-menu-wrap { position: relative; flex-shrink: 0; }
-#lists-menu-trigger[aria-expanded="true"] { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
-.lists-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: 280px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-pop);
-  padding: 14px;
-  z-index: 200;
-  opacity: 0;
-  transform: translateY(-6px) scale(0.98);
-  transform-origin: top right;
-  pointer-events: none;
-  transition: opacity 0.16s var(--ease), transform 0.18s var(--ease-out);
-}
-.lists-popover.open { opacity: 1; transform: none; pointer-events: auto; }
-.lists-popover-label {
-  font-size: 11.5px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--text-muted);
-  margin-bottom: 9px;
-}
-.lists-popover select {
-  width: 100%;
-  height: 38px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 0 30px 0 11px;
-  font-size: 13px;
-  color: var(--text);
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 8l3-3.5' fill='none' stroke='%238b91a4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 11px center;
-  background-size: 12px;
-}
-.lists-popover-actions { display: flex; gap: 8px; margin-top: 9px; }
-.lists-popover-actions .btn { flex: 1; height: 34px; }
-
-@media (max-width: 340px) {
-  /* Narrower than the popover's own width — let it hug the viewport
-     edge instead of overflowing off-screen. Stays position:absolute
-     (anchored to .lists-menu-wrap, not the viewport) rather than
-     position:fixed, since .appbar's position:sticky makes it a
-     containing block for fixed descendants and throws the math off. */
-  .lists-popover { width: calc(100vw - 20px); right: -10px; }
-}
-
 @media (max-width: 900px) {
   .appbar-wordmark p { display: none; }
   .auth-name { display: none; }
@@ -503,10 +431,7 @@ a { color: var(--accent); }
   .tcg-trigger-short { display: inline; }
   .tcg-trigger { padding: 0 9px; gap: 6px; }
 }
-@media (max-width: 480px) {
-  /* Signed-in state adds a 4th control (saved-lists trigger) to
-     appbar-tools — drop the decorative logo a bit earlier so the
-     wordmark and TCG picker never fight for the same space. */
+@media (max-width: 400px) {
   .appbar-brand svg.logo { display: none; }
 }
 
@@ -522,9 +447,51 @@ a { color: var(--accent); }
   gap: 16px;
 }
 
-/* Saved lists used to live in a permanent bar here at the top of the page —
-   moved to a popover off the app bar (see .lists-menu-wrap), gated on
-   sign-in since it did nothing until then anyway. */
+/* ── Saved lists bar — the "top toolbar" ────────────────────────────────── */
+.savedbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 11px 14px;
+  box-shadow: var(--shadow-sm);
+}
+.savedbar-label {
+  font-size: 12px; font-weight: 650; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 6px;
+}
+.savedbar select {
+  flex: 1 1 190px;
+  min-width: 0;
+  height: 38px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0 32px 0 11px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 8l3-3.5' fill='none' stroke='%238b91a4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 12px;
+  transition: border-color 0.18s var(--ease);
+}
+.savedbar select:hover { border-color: var(--border-strong); }
+.savedbar-note { font-size: 12px; color: var(--text-faint); }
+
+@media (max-width: 620px) {
+  .savedbar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .savedbar select { flex: 1 1 auto; width: 100%; }
+  .savedbar-actions { display: flex; gap: 8px; }
+  .savedbar-actions .btn { flex: 1; justify-content: center; }
+}
 
 /* ==========================================================================
    HERO BANNER — sits between the top toolbar and the content
@@ -534,48 +501,25 @@ a { color: var(--accent); }
   position: relative;
   border-radius: var(--r-lg);
   overflow: hidden;
-  min-height: 156px;
+  min-height: 128px;
   display: flex;
   align-items: flex-end;
   background: var(--chrome-bg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   isolation: isolate;
 }
 .hero-art {
   position: absolute;
   inset: 0;
-  background: var(--banner-bg);
+  background-image: var(--banner-img);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   z-index: 0;
   transform: scale(1.03);
-  transition: background 0.5s var(--ease), transform 6s var(--ease);
+  transition: opacity 0.5s var(--ease), transform 6s var(--ease);
 }
 .hero:hover .hero-art { transform: scale(1.06); }
-/* Faint dot-grid texture, common across every game — keeps the gradients
-   from reading flat without needing an actual image. */
-.hero-art::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1px);
-  background-size: 20px 20px;
-  -webkit-mask-image: linear-gradient(115deg, black 0%, black 45%, transparent 85%);
-  mask-image: linear-gradient(115deg, black 0%, black 45%, transparent 85%);
-}
-/* Oversized, faint watermark of the active game's icon — set from
-   GAME_ICONS in JS (switchGame), same icon used in the TCG picker. */
-.hero-icon-wm {
-  position: absolute;
-  top: 50%; right: -8%;
-  width: 240px; height: 240px;
-  transform: translateY(-50%);
-  opacity: 0.12;
-  z-index: 0;
-  pointer-events: none;
-}
-.hero-icon-wm svg { width: 100%; height: 100%; display: block; }
-@media (max-width: 620px) {
-  .hero-icon-wm { width: 160px; height: 160px; right: -12%; }
-}
 .hero-veil {
   position: absolute;
   inset: 0;
@@ -596,25 +540,25 @@ a { color: var(--accent); }
 .hero-content {
   position: relative;
   z-index: 2;
-  padding: 22px 24px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   width: 100%;
 }
 .hero-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 650;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent-light);
 }
 .hero-title {
-  font-size: 33px;
-  font-weight: 800;
+  font-size: 25px;
+  font-weight: 680;
   color: #ffffff;
-  letter-spacing: -0.025em;
-  text-shadow: 0 2px 20px rgba(0,0,0,0.55);
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.5);
 }
 .hero-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .hero-chip {
@@ -650,9 +594,9 @@ a { color: var(--accent); }
 }
 
 @media (max-width: 620px) {
-  .hero { min-height: 124px; }
-  .hero-content { padding: 16px 17px; gap: 6px; }
-  .hero-title { font-size: 23px; }
+  .hero { min-height: 104px; }
+  .hero-content { padding: 14px 15px; gap: 5px; }
+  .hero-title { font-size: 20px; }
 }
 
 /* ==========================================================================
@@ -709,7 +653,7 @@ a { color: var(--accent); }
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 12px 16px 12px 14px;
+  padding: 13px 16px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
   text-align: left;
@@ -721,22 +665,19 @@ a { color: var(--accent); }
 .panel-title {
   display: flex;
   align-items: center;
-  gap: 11px;
-  font-size: 14.5px;
+  gap: 9px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: -0.012em;
-  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
   min-width: 0;
 }
-.panel-icon {
-  width: 30px; height: 30px;
-  display: grid; place-items: center;
-  border-radius: var(--r-md);
-  background: var(--accent-wash);
-  color: var(--accent);
+.panel-title .panel-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
   flex-shrink: 0;
 }
-.panel-icon svg { width: 15px; height: 15px; }
 .panel-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .panel-chevron {
@@ -1439,9 +1380,7 @@ input[type="checkbox"] {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: color-mix(in srgb, var(--chrome-bg) 90%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  background: var(--chrome-bg);
   border-top: 1px solid var(--chrome-line);
   box-shadow: 0 -4px 22px rgba(0,0,0,0.28);
   padding: 10px max(14px, env(safe-area-inset-left))
@@ -1826,29 +1765,6 @@ code {
       <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       <span>Sign in</span>
     </button>
-    <span class="sr-only" id="auth-note">Sign in to save &amp; load lists</span>
-
-    <!-- Saved lists — a compact popover instead of a permanent top-of-page bar,
-         and only shown once signed in (it's non-functional until then). -->
-    <div class="lists-menu-wrap" id="lists-menu-wrap" style="display:none;">
-      <button class="theme-toggle" id="lists-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Saved lists" title="Saved lists">
-        <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M2.5 3.2A1.7 1.7 0 0 1 4.2 1.5h5.4l4.4 4.4v6.9a1.7 1.7 0 0 1-1.7 1.7H4.2a1.7 1.7 0 0 1-1.7-1.7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-          <path d="M5.4 1.8v3.6h4.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <div class="lists-popover" id="lists-popover">
-        <div class="lists-popover-label">Saved Lists</div>
-        <label class="sr-only" for="saved-lists-dropdown">Saved lists</label>
-        <select id="saved-lists-dropdown" onchange="onSavedListSelect()" aria-label="Saved lists">
-          <option value="">— select a saved list —</option>
-        </select>
-        <div class="lists-popover-actions">
-          <button class="btn btn-solid btn-sm" id="btn-save-list" onclick="saveCurrentLists()" disabled>Save current</button>
-          <button class="btn btn-danger btn-sm" id="btn-delete-list" onclick="deleteSavedList()" disabled>Delete</button>
-        </div>
-      </div>
-    </div>
 
     <div class="auth-user" id="auth-user" style="display:none;">
       <img id="auth-avatar" src="" alt="">
@@ -1860,10 +1776,28 @@ code {
 
 <div class="container">
 
+  <!-- ═══ Saved lists (top toolbar row) ═══ -->
+  <div class="savedbar">
+    <span class="savedbar-label">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2.5 3.2A1.7 1.7 0 0 1 4.2 1.5h5.4l4.4 4.4v6.9a1.7 1.7 0 0 1-1.7 1.7H4.2a1.7 1.7 0 0 1-1.7-1.7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M5.4 1.8v3.6h4.3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+      </svg>
+      Saved Lists
+    </span>
+    <select id="saved-lists-dropdown" onchange="onSavedListSelect()" aria-label="Saved lists">
+      <option value="">— select a saved list —</option>
+    </select>
+    <div class="savedbar-actions" style="display:flex;gap:8px;">
+      <button class="btn btn-solid btn-sm" id="btn-save-list" onclick="saveCurrentLists()" disabled style="height:38px;">Save current</button>
+      <button class="btn btn-danger btn-sm" id="btn-delete-list" onclick="deleteSavedList()" disabled style="height:38px;">Delete</button>
+    </div>
+    <span class="savedbar-note" id="auth-note">Sign in to save &amp; load lists</span>
+  </div>
+
   <!-- ═══ Banner — now between the top toolbar and the content ═══ -->
   <section class="hero" id="hero" aria-labelledby="hero-title">
     <div class="hero-art" id="hero-art" aria-hidden="true"></div>
-    <div class="hero-icon-wm" id="hero-icon-wm" aria-hidden="true"></div>
     <div class="hero-veil" aria-hidden="true"></div>
     <div class="hero-content">
       <span class="hero-eyebrow">Now searching</span>
@@ -1885,7 +1819,7 @@ code {
   <!-- ═══ Input panel ═══ -->
   <section class="panel" id="input-panel">
     <button class="panel-header" id="input-panel-header" aria-expanded="true" aria-controls="input-panel-body" onclick="togglePanel('input-panel')">
-      <span class="panel-title"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="5" width="10" height="8" rx="1.4" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 5V3.4A1.4 1.4 0 0 1 5.9 2h6.7A1.4 1.4 0 0 1 14 3.4v6.7a1.4 1.4 0 0 1-1.4 1.4H11" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M4.5 8h5M4.5 10.4h3.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span><span class="panel-title-text">Cards to Search</span></span>
+      <span class="panel-title"><span class="panel-dot"></span><span class="panel-title-text">Cards to Search</span></span>
       <span class="panel-chevron" aria-hidden="true">
         <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
@@ -1914,7 +1848,7 @@ code {
   <!-- ═══ Results panel ═══ -->
   <section class="panel hidden" id="results-panel">
     <button class="panel-header" id="results-panel-header" aria-expanded="true" aria-controls="results-panel-body" onclick="togglePanel('results-panel')">
-      <span class="panel-title"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><circle cx="6.6" cy="6.6" r="4.4" stroke="currentColor" stroke-width="1.5"/><path d="M9.8 9.8L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M4.7 6.6l1.3 1.3 2.4-2.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="panel-title-text" id="results-panel-title">Search Results</span></span>
+      <span class="panel-title"><span class="panel-dot"></span><span class="panel-title-text" id="results-panel-title">Search Results</span></span>
       <span class="panel-chevron" aria-hidden="true">
         <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
@@ -1960,7 +1894,7 @@ code {
   <!-- ═══ Browse panel ═══ -->
   <section class="panel hidden" id="browse-panel">
     <button class="panel-header" id="browse-panel-header" aria-expanded="true" aria-controls="browse-panel-body" onclick="togglePanel('browse-panel')">
-      <span class="panel-title"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="4.6" height="4.6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9.4" y="2" width="4.6" height="4.6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="9.4" width="4.6" height="4.6" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="9.4" y="9.4" width="4.6" height="4.6" rx="1" stroke="currentColor" stroke-width="1.4"/></svg></span><span class="panel-title-text" id="browse-panel-title">Browse All Cards</span></span>
+      <span class="panel-title"><span class="panel-dot"></span><span class="panel-title-text" id="browse-panel-title">Browse All Cards</span></span>
       <span class="panel-chevron" aria-hidden="true">
         <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
@@ -1978,7 +1912,7 @@ code {
   <!-- ═══ Generated lists panel ═══ -->
   <section class="panel hidden" id="lists-panel">
     <button class="panel-header" id="lists-panel-header" aria-expanded="true" aria-controls="lists-panel-body" onclick="togglePanel('lists-panel')">
-      <span class="panel-title"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.6L12 4.4V13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.5 7.5h5M5.5 10h5M5.5 5h2.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span><span class="panel-title-text">Generated Lists</span></span>
+      <span class="panel-title"><span class="panel-dot"></span><span class="panel-title-text">Generated Lists</span></span>
       <span class="panel-chevron" aria-hidden="true">
         <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 8l3-3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </span>
@@ -2064,7 +1998,7 @@ code {
 
   <span class="actionbar-credit">
     crafted by <strong>QuestionGod</strong>
-    <button class="chip-btn" onclick="openVersionModal()">v3.0</button>
+    <button class="chip-btn" onclick="openVersionModal()">v2.0</button>
     <button class="chip-btn" onclick="openHelpModal()">? Help</button>
   </span>
 
@@ -2082,7 +2016,7 @@ code {
       <div class="sep"></div>
       <button role="menuitem" onclick="openHelpModal(); closeMoreMenu()">? Help Guide</button>
       <button role="menuitem" onclick="openVersionModal(); closeMoreMenu()">📋 Version History</button>
-      <div class="meta"><span>crafted by <strong>QuestionGod</strong></span><span>v3.0</span></div>
+      <div class="meta"><span>crafted by <strong>QuestionGod</strong></span><span>v2.0</span></div>
     </div>
   </div>
 </nav>
@@ -2121,24 +2055,6 @@ code {
       <button class="modal-close" onclick="closeVersionModal()" aria-label="Close">✕</button>
     </div>
     <div class="modal-scroll" style="gap:10px;">
-      <div class="vlog">
-        <span class="vlog-ver">v3.0</span>
-        <div class="vlog-notes">
-          <div>Full visual redesign — new typeface, custom gradient hero art per game (replaces hotlinked stock photos)</div>
-          <div>Panel headers now carry a contextual icon instead of a plain dot</div>
-          <div>Frosted-glass treatment on the top and bottom chrome bars</div>
-          <div>Bigger, bolder hero banner with a watermarked game icon</div>
-        </div>
-      </div>
-      <div class="vlog">
-        <span class="vlog-ver">v2.1</span>
-        <div class="vlog-notes">
-          <div>Browse All Cards — page through the full sheet for any game without searching</div>
-          <div>New-arrival detection for MTG, with a NEW badge and newest-first sorting</div>
-          <div>Filter Browse by print type (New/Normal/Holo/Foil) and jump to a letter</div>
-          <div>Browse paginates at 100 cards per page for a smooth scroll on mobile</div>
-        </div>
-      </div>
       <div class="vlog">
         <span class="vlog-ver">v2.0</span>
         <div class="vlog-notes">
@@ -2591,7 +2507,6 @@ function switchGame(forceGame) {
   syncTcgTrigger();
 
   document.getElementById('hero-title').textContent = cfg.label;
-  document.getElementById('hero-icon-wm').innerHTML  = GAME_ICONS[currentGame];
   document.getElementById('auto-pick-btns').style.display = cfg.showAutoPick ? '' : 'none';
   document.getElementById('input-hint').textContent = cfg.inputHint;
   document.getElementById('card-input').placeholder = cfg.inputPlaceholder;
@@ -2611,16 +2526,13 @@ window.addEventListener('DOMContentLoaded', () => {
   syncTcgTrigger();
   document.getElementById('card-input').placeholder = GAME_CONFIGS[currentGame].inputPlaceholder;
   document.getElementById('hero-title').textContent = GAME_CONFIGS[currentGame].label;
-  document.getElementById('hero-icon-wm').innerHTML  = GAME_ICONS[currentGame];
 
   /* ── TCG picker wiring ── */
   document.getElementById('tcg-trigger').addEventListener('click', toggleTcgMenu);
   document.getElementById('tcg-scrim').addEventListener('click', closeTcgMenu);
-  document.getElementById('lists-menu-trigger').addEventListener('click', toggleListsMenu);
   document.addEventListener('click', e => {
     if (!e.target.closest('#tcg')) closeTcgMenu();
     if (!e.target.closest('.more-wrap')) closeMoreMenu();
-    if (!e.target.closest('.lists-menu-wrap')) closeListsMenu();
   });
 
   /* ── Theme toggle ── */
@@ -2637,7 +2549,6 @@ window.addEventListener('DOMContentLoaded', () => {
     if (e.key !== 'Escape') return;
     closeTcgMenu();
     closeMoreMenu();
-    closeListsMenu();
     closePeek();
     document.querySelectorAll('.modal-overlay.visible').forEach(m => m.classList.remove('visible'));
   });
@@ -2737,16 +2648,6 @@ function toggleMoreMenu() {
 function closeMoreMenu() {
   document.getElementById('more-menu').classList.remove('open');
   document.getElementById('btn-more').setAttribute('aria-expanded', 'false');
-}
-
-function toggleListsMenu() {
-  const popover = document.getElementById('lists-popover');
-  const open = popover.classList.toggle('open');
-  document.getElementById('lists-menu-trigger').setAttribute('aria-expanded', String(open));
-}
-function closeListsMenu() {
-  document.getElementById('lists-popover').classList.remove('open');
-  document.getElementById('lists-menu-trigger').setAttribute('aria-expanded', 'false');
 }
 
 /* ==========================================================================
@@ -3979,7 +3880,6 @@ document.addEventListener('click', e => {
       document.getElementById('auth-name').textContent = user.displayName || user.email;
       document.getElementById('auth-note').style.display = 'none';
       document.getElementById('btn-save-list').disabled  = false;
-      document.getElementById('lists-menu-wrap').style.display = '';
       refreshSavedDropdown();
     } else {
       document.getElementById('btn-signin').style.display  = '';
@@ -3987,8 +3887,6 @@ document.addEventListener('click', e => {
       document.getElementById('auth-note').style.display   = '';
       document.getElementById('btn-save-list').disabled    = true;
       document.getElementById('btn-delete-list').disabled  = true;
-      document.getElementById('lists-menu-wrap').style.display = 'none';
-      closeListsMenu();
       clearDropdown();
     }
   });
