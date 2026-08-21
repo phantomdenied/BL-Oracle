@@ -253,6 +253,7 @@ a { color: var(--accent); }
   content: '';
   position: absolute;
   inset: 0;
+  z-index: -1;
   background: color-mix(in srgb, var(--chrome-bg) 88%, transparent);
   backdrop-filter: blur(14px) saturate(1.4);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
@@ -437,6 +438,7 @@ a { color: var(--accent); }
   max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .btn-signout {
+  display: flex; align-items: center; gap: 6px;
   background: var(--chrome-hover);
   border: 1px solid var(--chrome-line);
   color: var(--chrome-muted);
@@ -445,6 +447,7 @@ a { color: var(--accent); }
   transition: background 0.16s var(--ease), color 0.16s var(--ease);
 }
 .btn-signout:hover { background: rgba(255,255,255,0.16); color: var(--chrome-text); }
+.btn-signout svg { flex-shrink: 0; }
 
 /* ── Saved lists popover — was a permanent bar at the top of the page,
    now a compact trigger next to the account controls, only shown once
@@ -512,6 +515,8 @@ a { color: var(--accent); }
   .appbar-wordmark h1 { font-size: 15px; }
   .btn-signin span { display: none; }
   .btn-signin { padding: 0 11px; }
+  .btn-signout span { display: none; }
+  .btn-signout { padding: 0; width: 34px; height: 34px; justify-content: center; }
   /* Long game names don't fit — fall back to the short code, not to nothing */
   .tcg-trigger-label { display: none; }
   .tcg-trigger-short { display: inline; }
@@ -1867,7 +1872,14 @@ code {
     <div class="auth-user" id="auth-user" style="display:none;">
       <img id="auth-avatar" src="" alt="">
       <span class="auth-name" id="auth-name"></span>
-      <button class="btn-signout" onclick="signOut()">Sign out</button>
+      <button class="btn-signout" onclick="signOut()" title="Sign out" aria-label="Sign out">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M6 2H3.5A1.5 1.5 0 0 0 2 3.5v9A1.5 1.5 0 0 0 3.5 14H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10 11.5L13.5 8 10 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13.5 8H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <span>Sign out</span>
+      </button>
     </div>
   </div>
 </header>
