@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="The Oracle — match your deck list against a live singles inventory across MTG, Pokémon, Yu-Gi-Oh! and One Piece.">
 <meta name="theme-color" content="#12101c">
-<title>The Oracle</title>
+<title>The Oracle — Preview</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -263,13 +263,29 @@ a { color: var(--accent); }
 .appbar-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .appbar-brand svg { flex-shrink: 0; }
 .appbar-wordmark { min-width: 0; }
-.appbar-wordmark h1 {
+.appbar-wordmark .brand-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 16px;
   letter-spacing: 0.02em;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.preview-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: var(--r-pill);
+  padding: 2px 7px;
+  flex-shrink: 0;
 }
 .appbar-wordmark p {
   font-size: 10.5px;
@@ -512,7 +528,7 @@ a { color: var(--accent); }
 }
 @media (max-width: 700px) {
   .appbar { gap: 10px; padding-top: 8px; padding-bottom: 8px; }
-  .appbar-wordmark h1 { font-size: 15px; }
+  .appbar-wordmark .brand-name { font-size: 15px; }
   .btn-signin span { display: none; }
   .btn-signin { padding: 0 11px; }
   .btn-signout span { display: none; }
@@ -675,6 +691,140 @@ a { color: var(--accent); }
 }
 
 /* ==========================================================================
+   LANDING INTRO — this is the page's real headline now; the per-game hero
+   below it becomes a compact "you're searching X" context bar.
+   ========================================================================== */
+.landing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 28px;
+  padding: 8px 4px 4px;
+}
+.landing-copy { flex: 1 1 420px; min-width: 0; }
+.landing-title {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin-bottom: 12px;
+}
+.landing-sub {
+  font-size: 15.5px;
+  color: var(--text-muted);
+  max-width: 52ch;
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+.landing-cta-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-lg { height: 46px; padding: 0 20px; font-size: 14px; }
+
+.landing-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  gap: 10px;
+  flex: 1 1 320px;
+}
+.landing-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.landing-stat-num {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.landing-stat-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+@media (max-width: 760px) {
+  .landing-title { font-size: 30px; }
+  .landing-stat { padding: 12px 10px; }
+  .landing-stat-num { font-size: 19px; }
+}
+
+/* ── Game picker bento grid — a visual alternative to the app-bar dropdown,
+   doubles as "what this tool covers" for a first-time visitor. ── */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 760px) {
+  .game-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.game-card {
+  --card-accent: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  transition: border-color 0.16s var(--ease), transform 0.14s var(--ease), box-shadow 0.16s var(--ease);
+}
+.game-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: color-mix(in srgb, var(--card-accent) 45%, var(--border)); }
+.game-card[aria-pressed="true"] {
+  border-color: var(--card-accent);
+  background: color-mix(in srgb, var(--card-accent) 7%, var(--surface));
+  box-shadow: 0 0 0 1px var(--card-accent), var(--shadow-sm);
+}
+.game-card-ico {
+  width: 38px; height: 38px;
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--card-accent) 14%, transparent);
+}
+.game-card-ico svg { width: 24px; height: 24px; }
+.game-card-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.game-card-name { font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game-card-tag { font-size: 11px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Static per-game hex, independent of whichever game is currently active
+   (the shared --accent token only reflects the ONE active game). */
+.game-card[data-game="mtg"] { --card-accent: #7c3aed; }
+.game-card[data-game="pkm"] { --card-accent: #e11d48; }
+.game-card[data-game="ygo"] { --card-accent: #b45309; }
+.game-card[data-game="op"]  { --card-accent: #0891b2; }
+@media (max-width: 480px) {
+  .game-card-tag { display: none; }
+}
+
+/* ── Site footer ────────────────────────────────────────────────────────── */
+.site-footer {
+  margin-top: 8px;
+  padding: 22px 4px 4px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.site-footer-brand { display: flex; align-items: center; gap: 8px; font-weight: 650; color: var(--text-muted); }
+.site-footer-links { display: flex; gap: 16px; flex-wrap: wrap; }
+.site-footer-links button { color: var(--text-faint); font-size: 12px; font-weight: 550; }
+.site-footer-links button:hover { color: var(--accent); }
+.site-footer-note { flex-basis: 100%; font-size: 11px; color: var(--text-faint); opacity: 0.8; }
+
+/* ==========================================================================
    BUTTONS
    ========================================================================== */
 .btn {
@@ -691,6 +841,7 @@ a { color: var(--accent); }
   color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--border);
+  text-decoration: none;
   transition: transform 0.12s var(--ease), box-shadow 0.18s var(--ease),
               background 0.18s var(--ease), border-color 0.18s var(--ease), opacity 0.18s var(--ease);
 }
@@ -1495,15 +1646,12 @@ input[type="checkbox"] {
 }
 .actionbar-credit strong { color: var(--accent-light); font-weight: 650; }
 .chip-btn {
-  display: inline-flex;
-  align-items: center;
   border: 1px solid var(--chrome-line);
   border-radius: var(--r-pill);
   color: var(--chrome-muted);
   font-size: 10.5px;
   font-weight: 600;
   padding: 3px 9px;
-  text-decoration: none;
   transition: color 0.16s var(--ease), border-color 0.16s var(--ease), background 0.16s var(--ease);
 }
 .chip-btn:hover { color: var(--chrome-text); border-color: rgba(255,255,255,0.3); background: var(--chrome-hover); }
@@ -1531,7 +1679,7 @@ input[type="checkbox"] {
   z-index: 90;
 }
 .more-menu.open { opacity: 1; transform: none; pointer-events: auto; }
-.more-menu button, .more-menu a[role="menuitem"] {
+.more-menu button {
   display: flex; align-items: center; gap: 10px;
   width: 100%;
   min-height: 44px;
@@ -1541,10 +1689,9 @@ input[type="checkbox"] {
   font-weight: 550;
   color: var(--text);
   text-align: left;
-  text-decoration: none;
   transition: background 0.14s var(--ease);
 }
-.more-menu button:hover:not(:disabled), .more-menu a[role="menuitem"]:hover { background: var(--surface-3); }
+.more-menu button:hover:not(:disabled) { background: var(--surface-3); }
 .more-menu button:disabled { opacity: 0.4; cursor: not-allowed; }
 .more-menu .sep { height: 1px; background: var(--border); margin: 4px 6px; }
 .more-menu .meta {
@@ -1811,7 +1958,7 @@ code {
       <line x1="24" y1="11.5" x2="24.8" y2="9.5" stroke="var(--accent-light)" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
     </svg>
     <div class="appbar-wordmark">
-      <h1>The Oracle</h1>
+      <p class="brand-name">The Oracle <span class="preview-badge">Preview</span></p>
       <p>See all. Miss nothing.</p>
     </div>
   </div>
@@ -1889,6 +2036,41 @@ code {
 </header>
 
 <div class="container">
+
+  <!-- ═══ Landing intro — value prop, trust stats, CTA ═══ -->
+  <section class="landing" aria-labelledby="landing-title">
+    <div class="landing-copy">
+      <h1 class="landing-title" id="landing-title">Find every card you need, instantly.</h1>
+      <p class="landing-sub">Paste a decklist and The Oracle checks it against a live singles inventory across four games — Magic, Pokémon, Yu-Gi-Oh!, and One Piece — in seconds, then builds your buy list for you.</p>
+      <div class="landing-cta-row">
+        <a href="#input-panel" class="btn btn-accent btn-lg">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M10.6 10.6L14 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          <span>Start searching</span>
+        </a>
+        <a href="#game-grid" class="btn btn-ghost btn-lg"><span>Browse games</span></a>
+      </div>
+    </div>
+    <div class="landing-stats" role="group" aria-label="At a glance">
+      <div class="landing-stat">
+        <span class="landing-stat-num">4</span>
+        <span class="landing-stat-lbl">Games tracked</span>
+      </div>
+      <div class="landing-stat">
+        <span class="landing-stat-num" id="landing-stat-cards">—</span>
+        <span class="landing-stat-lbl">Cards in this inventory</span>
+      </div>
+      <div class="landing-stat">
+        <span class="landing-stat-num">Live</span>
+        <span class="landing-stat-lbl">Synced from the sheet</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Game picker bento grid ═══ -->
+  <section class="game-grid" id="game-grid" aria-label="Choose a game"></section>
 
   <!-- ═══ Banner — now between the top toolbar and the content ═══ -->
   <section class="hero" id="hero" aria-labelledby="hero-title">
@@ -2069,6 +2251,23 @@ code {
     </div>
   </section>
 
+  <!-- ═══ Footer ═══ -->
+  <footer class="site-footer">
+    <div class="site-footer-brand">
+      <svg width="16" height="16" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <circle cx="19" cy="19" r="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.6"/>
+        <circle cx="19" cy="19" r="6.5" fill="currentColor" opacity="0.5"/>
+      </svg>
+      The Oracle
+    </div>
+    <div class="site-footer-links">
+      <button type="button" onclick="openHelpModal()">Help guide</button>
+      <button type="button" onclick="openVersionModal()">Version history</button>
+      <span>crafted by <strong>QuestionGod</strong></span>
+    </div>
+    <p class="site-footer-note">Inventory data is pulled live from the sheet each time you switch games — pricing and stock are only as current as that sheet.</p>
+  </footer>
+
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════
@@ -2094,7 +2293,6 @@ code {
 
   <span class="actionbar-credit">
     crafted by <strong>QuestionGod</strong>
-    <a class="chip-btn" href="/redesign.html" target="_blank" rel="noopener">✨ Preview new look</a>
     <button class="chip-btn" onclick="openVersionModal()">v3.0</button>
     <button class="chip-btn" onclick="openHelpModal()">? Help</button>
   </span>
@@ -2111,7 +2309,6 @@ code {
       <button role="menuitem" onclick="clearSearch(); closeMoreMenu()">✕ Clear Search</button>
       <button role="menuitem" onclick="openResetModal(); closeMoreMenu()">⟳ Reset Everything</button>
       <div class="sep"></div>
-      <a role="menuitem" href="/redesign.html" target="_blank" rel="noopener">✨ Preview New Look</a>
       <button role="menuitem" onclick="openHelpModal(); closeMoreMenu()">? Help Guide</button>
       <button role="menuitem" onclick="openVersionModal(); closeMoreMenu()">📋 Version History</button>
       <div class="meta"><span>crafted by <strong>QuestionGod</strong></span><span>v3.0</span></div>
@@ -2599,6 +2796,26 @@ function syncTcgTrigger() {
   });
 }
 
+/* ── Landing game-picker grid — visual alternative to the app-bar dropdown ── */
+function buildGameGrid() {
+  const grid = document.getElementById('game-grid');
+  grid.innerHTML = GAME_ORDER.map(g => {
+    const cfg = GAME_CONFIGS[g];
+    return `<button class="game-card" type="button" data-game="${g}" aria-pressed="${g === currentGame}" onclick="selectGame('${g}')">
+      <span class="game-card-ico">${GAME_ICONS[g]}</span>
+      <span class="game-card-body">
+        <span class="game-card-name">${esc(cfg.label)}</span>
+        <span class="game-card-tag">${esc(cfg.tagline)}</span>
+      </span>
+    </button>`;
+  }).join('');
+}
+function syncGameGrid() {
+  document.querySelectorAll('.game-card').forEach(c => {
+    c.setAttribute('aria-pressed', String(c.dataset.game === currentGame));
+  });
+}
+
 /* ==========================================================================
    GAME SWITCHER
    ========================================================================== */
@@ -2621,6 +2838,7 @@ function switchGame(forceGame) {
   document.documentElement.setAttribute('data-game', currentGame);
 
   syncTcgTrigger();
+  syncGameGrid();
 
   document.getElementById('hero-title').textContent = cfg.label;
   document.getElementById('hero-icon-wm').innerHTML  = GAME_ICONS[currentGame];
@@ -2641,6 +2859,7 @@ function switchGame(forceGame) {
 window.addEventListener('DOMContentLoaded', () => {
   buildTcgMenu();
   syncTcgTrigger();
+  buildGameGrid();
   document.getElementById('card-input').placeholder = GAME_CONFIGS[currentGame].inputPlaceholder;
   document.getElementById('hero-title').textContent = GAME_CONFIGS[currentGame].label;
   document.getElementById('hero-icon-wm').innerHTML  = GAME_ICONS[currentGame];
@@ -2798,6 +3017,7 @@ async function loadSingles(force = false) {
   setStatus(`Loading ${cfg.label} singles…`, 'info');
   showProgress(0, 'Fetching sheet data…');
   setInventoryChip('loading', 'Loading inventory…');
+  document.getElementById('landing-stat-cards').textContent = '—';
 
   try {
     const rows = await fetchSheetData(cfg);
@@ -2805,6 +3025,7 @@ async function loadSingles(force = false) {
     parseSingles(rows, cfg);
     singlesLoaded = true;
     setInventoryChip('ready', `${singlesData.length.toLocaleString()} cards in stock`);
+    document.getElementById('landing-stat-cards').textContent = singlesData.length.toLocaleString();
     setStatus(`${cfg.label} inventory loaded — ${singlesData.length.toLocaleString()} cards ready.`, 'success');
     hideProgress();
   } catch (e) {
