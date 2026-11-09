@@ -2393,23 +2393,10 @@ const GAME_CONFIGS = {
     // next header (another date, or a skipWord) resets the column's state.
     newCardsPattern: /^(\d{1,2}\.\d{1,2})\s+new\s+updates?$/i,
     checkStrikethrough: false,
-    // col groups for auto-pick (0-indexed): modest=C,D; blinged=E,F; the
-    // three synthetic cols (100/101/102) are the mystery-box sheet below —
-    // same cards, just also sold bundled into a themed box.
-    modestCols:  [2, 3, 100],
-    blingedCols: [4, 5, 101],
+    // col groups for auto-pick (0-indexed): modest=C,D; blinged=E,F
+    modestCols:  [2, 3],
+    blingedCols: [4, 5],
     colLabels:  ['Col A','Col B','Col C','Col D','Col E','Col F'],
-    // A second spreadsheet: numbered "mystery box" products, one per column
-    // (name row, box-photo row, unboxing-video row, then the guaranteed
-    // cards inside with their own photos). These cards are also sold loose
-    // in the main SINGLES sheet above — this just adds the box as another
-    // place to find the same card, tagged holo/foil/plain by which tab it's
-    // in rather than by real column index (there are dozens of box columns).
-    extraSources: [
-      { sheetId: '12jvPVOcuYfJ5hP_YsldyZmDN-_83ZvbkT5oO2qn_ABY', sheetName: 'HOLO SETS',    range: 'A1:AZ10000', skipRows: 3, syntheticCol: 100 },
-      { sheetId: '12jvPVOcuYfJ5hP_YsldyZmDN-_83ZvbkT5oO2qn_ABY', sheetName: 'FOIL SETS',    range: 'A1:AZ10000', skipRows: 3, syntheticCol: 101 },
-      { sheetId: '12jvPVOcuYfJ5hP_YsldyZmDN-_83ZvbkT5oO2qn_ABY', sheetName: 'REGULAR SETS', range: 'A1:AZ10000', skipRows: 3, syntheticCol: 102 },
-    ],
     inputHint:  'Paste your deck list below, one card per line.',
     inputPlaceholder: 'Paste your card list here, one card per line:\n\n4 Lightning Bolt\n2 Snapcaster Mage\nBlack Lotus\n\nTo import from Moxfield, Archidekt or MTGGoldfish,\nuse the 📥 Import Deck to Oracle bookmarklet above.',
     showAutoPick: true,
@@ -2814,23 +2801,8 @@ async function loadSingles(force = false) {
 
   try {
     const rows = await fetchSheetData(cfg);
-    showProgress(40, 'Parsing data…');
+    showProgress(50, 'Parsing data…');
     parseSingles(rows, cfg);
-
-    if (cfg.extraSources && cfg.extraSources.length) {
-      showProgress(70, 'Fetching additional sources…');
-      try {
-        const extraRowsList = await Promise.all(cfg.extraSources.map(src => fetchSheetData(src)));
-        extraRowsList.forEach((extraRows, i) => {
-          singlesData.push(...parseExtraSource(extraRows, cfg.extraSources[i]));
-        });
-      } catch (e) {
-        // Degrade gracefully — the main sheet still loaded fine.
-        console.error('Extra source fetch failed:', e);
-        setStatus(`Loaded ${cfg.label} singles, but one additional source failed to load.`, 'error', 6000);
-      }
-    }
-
     singlesLoaded = true;
     setInventoryChip('ready', `${singlesData.length.toLocaleString()} cards in stock`);
     setStatus(`${cfg.label} inventory loaded — ${singlesData.length.toLocaleString()} cards ready.`, 'success');
@@ -2902,28 +2874,6 @@ function parseSingles(rows, cfg) {
       });
     }
   }
-}
-
-/* Extra sources (e.g. the mystery-box sheet) — each is just a flat scan
-   past its header rows, every entry tagged with that source's synthetic
-   col so it inherits the right holo/foil/plain badge via modestCols /
-   blingedCols, without needing one array entry per real spreadsheet
-   column (there can be dozens, one per box). */
-function parseExtraSource(rows, src) {
-  const entries = [];
-  for (let r = src.skipRows; r < rows.length; r++) {
-    const row = rows[r];
-    for (let c = 0; c < row.length; c++) {
-      const cell = row[c];
-      const val = (cell.value || '').trim();
-      if (!val) continue;
-      entries.push({
-        value: val, valueLower: val.toLowerCase(), col: src.syntheticCol,
-        url: cell.url || null, isNew: false, newDate: null,
-      });
-    }
-  }
-  return entries;
 }
 
 /* ==========================================================================
