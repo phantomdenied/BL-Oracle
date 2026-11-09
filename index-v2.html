@@ -3381,7 +3381,10 @@ function renderBrowsePage() {
 
   attachHoverPreviews();
   _imageRun++;
-  if (imagesOn) loadRowImages();
+  // Browse has no toggle of its own — card images are the point of browsing,
+  // so always load them rather than relying on a preference carried over
+  // (invisibly) from the Search results page.
+  loadRowImages(true);
 }
 
 function syncFilterButtons() {
@@ -3886,8 +3889,8 @@ function resetPeekSlot(el) {
   if (svg) svg.style.display = '';
 }
 
-async function loadRowImages() {
-  if (!imagesOn) return;
+async function loadRowImages(force = false) {
+  if (!imagesOn && !force) return;
   const run = ++_imageRun;
 
   const slots = [...document.querySelectorAll('.rc-peek[data-peek]')]
